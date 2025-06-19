@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BFFF04852E0478AC00524A48 /* imageseg_canopy_model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = BFFF04832E0478AC00524A48 /* imageseg_canopy_model.mlpackage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		EDB99FEC2E02361800F9E106 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BFFF04832E0478AC00524A48 /* imageseg_canopy_model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = imageseg_canopy_model.mlpackage; sourceTree = "<group>"; };
 		EDB99FDC2E02361600F9E106 /* TreeTop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TreeTop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDB99FEB2E02361800F9E106 /* TreeTopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreeTopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDB99FF52E02361800F9E106 /* TreeTopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreeTopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,9 +77,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BFFF04842E0478AC00524A48 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BFFF04832E0478AC00524A48 /* imageseg_canopy_model.mlpackage */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		EDB99FD32E02361600F9E106 = {
 			isa = PBXGroup;
 			children = (
+				BFFF04842E0478AC00524A48 /* Models */,
 				EDB99FDE2E02361600F9E106 /* TreeTop */,
 				EDB99FEE2E02361800F9E106 /* TreeTopTests */,
 				EDB99FF82E02361800F9E106 /* TreeTopUITests */,
@@ -236,6 +250,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BFFF04852E0478AC00524A48 /* imageseg_canopy_model.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
