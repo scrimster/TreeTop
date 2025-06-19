@@ -11,6 +11,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
+    @StateObject private var captureViewModel = CaptureViewModel()
 
     var body: some View {
         NavigationSplitView {
@@ -33,6 +34,11 @@ struct ContentView: View {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
+                ToolbarItem {
+                    Button(action: saveMockSummary) {
+                        Label("Save Summary", systemImage: "square.and.arrow.down")
+                    }
+                }
             }
         } detail: {
             Text("Select an item")
@@ -52,6 +58,15 @@ struct ContentView: View {
                 modelContext.delete(items[index])
             }
         }
+    }
+    private func saveSummaryWithRealData(image: UIImage, canopyPercent: Double, location: CLLocationCoordinate2D) {
+        captureViewModel.saveSummary(
+            image: image,
+            canopyPercent: canopyPercent,
+            location: location
+        )
+        
+        print("Saved summary with TreeTop: \(canopyPercent)% at \(location.latitude), \(location.longitude)")
     }
 }
 
