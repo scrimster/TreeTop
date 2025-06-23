@@ -11,34 +11,69 @@ import AVFoundation
 struct LiveCameraView: View {
     //this creates an object where it holds the logic of the camera function in CameraManager(). It monitors it for any change.
     @StateObject var cameraManager = CameraManager()
+    //this is will keep track if the picture was taken or not
+    @State var isPhotoTaken = false
     
     var body: some View {
         //creates a vertical stack layout
         VStack {
-            CameraPreview(session: cameraManager.captureSession) //puts the live camera feed on the screen
-                .ignoresSafeArea()
-                .frame(height: 400)
-            
-            //below it creates the button: what it does, and what it looks like within the two sets of {}
-            Button(action: {
-                cameraManager.capturePhoto()
-            }) {
-                Text("Take Photo")
-                    .font(.title2)
-                    .padding()
-                    .background(Color.white)
-                    .foregroundColor(.black)
-                    .clipShape(Capsule())
-            }
-            
-            //checks if the image has been taken and stores it into the 'Image' variable
-            if let image = cameraManager.capturedImage {
-                Image(uiImage: image) //the bridge between UIKit-style to SwiftUI
+            //this block switches between the full-screen captured picture and the live camera preview
+            if isPhotoTaken, let image = cameraManager.capturedImage {
+                Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .frame(height: 300)
-                    .cornerRadius(12)
-                    .padding()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            } else {
+                CameraPreview(session: cameraManager.captureSession)
+                    .ignoresSafeArea()
+            }
+                
+            //below it creates the button: what it does, and what it looks like within the two sets of {}
+            if isPhotoTaken {
+                HStack {
+                    Button(action: {
+                        cameraManager.capturedImage = nil
+                        isPhotoTaken = false
+                    }) {
+                        Text("Retake")
+                            .font(.title2)
+                            .padding()
+                            .background(Color.white)
+                            .foregroundColor(.black)
+                            .clipShape(Capsule())
+                    }
+                    //if the image has been captured and you want to save, it saves it to your photo library.
+                    Button(action: {
+                        if let image = cameraManager.capturedImage {
+                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                            print("Photo saved to library.")
+                        }
+                    }) {
+                        Text("Save")
+                            .font(.title2)
+                            .padding()
+                            .background(Color.white)
+                            .foregroundColor(.black)
+                            .clipShape(Capsule())
+                    }
+                }
+            } else {
+                Button(action: {
+                    cameraManager.capturePhoto()
+                }) {
+                    Text("Take Photo")
+                        .font(.title2)
+                        .padding()
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .onChange(of: cameraManager.capturedImage) { //watch anytime this block of code changes
+            if cameraManager.capturedImage != nil { //checks if the new photo was taken, if yes then it's bool changes
+                isPhotoTaken = true
             }
         }
     }
