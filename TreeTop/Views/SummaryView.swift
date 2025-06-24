@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
+struct SummaryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
     @StateObject private var captureViewModel = CaptureViewModel()
@@ -71,6 +71,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    SummaryView()
         .modelContainer(for: Item.self, inMemory: true)
 }
