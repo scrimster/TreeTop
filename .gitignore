@@ -1,1 +1,6 @@
-TreeTop.xcodeproj/project.xcworkspace/xcuserdata/
+# macOS system files
+.DS_Store
+
+# Xcode user-specific files
+*.xcuserstate
+xcuserdata/
