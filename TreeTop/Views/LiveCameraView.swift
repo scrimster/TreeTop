@@ -13,6 +13,8 @@ struct LiveCameraView: View {
     @StateObject var cameraManager = CameraManager()
     //this is will keep track if the picture was taken or not
     @State var isPhotoTaken = false
+    @State var showSaveConfirmation = false
+    var project: Project
     
     var body: some View {
         //creates a vertical stack layout
@@ -43,11 +45,16 @@ struct LiveCameraView: View {
                             .foregroundColor(.black)
                             .clipShape(Capsule())
                     }
-                    //if the image has been captured and you want to save, it saves it to your photo library.
+                    //once you hit save, the captured image should save to the newly created project
                     Button(action: {
                         if let image = cameraManager.capturedImage {
-                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-                            print("Photo saved to library.")
+                            let success = ProjectManager.shared.saveImage(image, to: project)
+                            if success {
+                                showSaveConfirmation = true
+                                print("Photo saved to project folder.")
+                            } else {
+                                print("Failed to save photo")
+                            }
                         }
                     }) {
                         Text("Save")
@@ -76,6 +83,14 @@ struct LiveCameraView: View {
                 isPhotoTaken = true
             }
         }
+        
+        .alert(isPresented: $showSaveConfirmation) {
+            Alert(
+                title: Text("Saved"),
+                message: Text("Photo saved to project folder."),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 }
 
@@ -101,5 +116,5 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 #Preview {
-    LiveCameraView()
+    LiveCameraView(project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"))
 }
