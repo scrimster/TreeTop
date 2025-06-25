@@ -21,10 +21,17 @@ struct LoadingView: View {
 }
 #Preview {
     LoadingView()
-    #PreviewLayout(.fixed(width: 300, height: 400))
-    #PreviewLayout(.fixed(width: 600, height: 800))
-    #PreviewLayout(.fixed(width: 800, height: 1000))
-    #PreviewLayout(.fullScreen)
-    #PreviewLayout(.sizeThatFits)
-    
 }
+
+
+/*
+ #Preview {
+ LoadingView()
+ #PreviewLayout(.fixed(width: 300, height: 400))
+ #PreviewLayout(.fixed(width: 600, height: 800))
+ #PreviewLayout(.fixed(width: 800, height: 1000))
+ #PreviewLayout(.fullScreen)
+ #PreviewLayout(.sizeThatFits)
+ 
+}
+ */
