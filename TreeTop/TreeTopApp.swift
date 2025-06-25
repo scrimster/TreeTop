@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct TreeTopApp: App {
+    @State private var isLoading = true
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -25,7 +26,19 @@ struct TreeTopApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if isLoading {
+                    LoadingView()
+                 } else {
+                    ContentView()
+        }
+    }
+        .onAppear {
+            //simulate a short loading period
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                isLoading = false
+                }
+            }
         }
         .modelContainer(sharedModelContainer)
     }
