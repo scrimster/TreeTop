@@ -27,8 +27,13 @@ struct LiveCameraView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
             } else {
-                CameraPreview(session: cameraManager.captureSession)
-                    .ignoresSafeArea()
+                if cameraManager.isSessionRunning {
+                    CameraPreview(session: cameraManager.captureSession)
+                        .ignoresSafeArea()
+                } else {
+                    ProgressView("Loading Camera...")
+                        .foregroundColor(.white)
+                }
             }
                 
             //below it creates the button: what it does, and what it looks like within the two sets of {}
