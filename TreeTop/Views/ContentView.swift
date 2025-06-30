@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        ExistingProjectView()
+        MainMenuView()
     }
 }
 
@@ -17,4 +17,3 @@ struct ContentView: View {
     ContentView()
 }
 
-//to push a change only
