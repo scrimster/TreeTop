@@ -12,10 +12,6 @@ import SwiftData
 struct TreeTopApp: App {
     @State private var isLoading = true
     var sharedModelContainer: ModelContainer = {
-//        print("starting string transformer")
-//        ValueTransformer.setValueTransformer(StringArrayTransformer(), forName: NSValueTransformerName("StringArrayTransformer"))
-        //print("starting double transformer")
-        //ValueTransformer.setValueTransformer(DoubleArrayTransformer(), forName: NSValueTransformerName("DoubleArrayTransformer"))
         
         let schema = Schema([
             Project.self

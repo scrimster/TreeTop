@@ -14,7 +14,10 @@ struct LiveCameraView: View {
     //this is will keep track if the picture was taken or not
     @State var isPhotoTaken = false
     @State var showSaveConfirmation = false
+    @Environment(\.dismiss) var dismiss
+    
     var project: Project
+    @Binding var shouldGoToExistingProjects: Bool
     
     var body: some View {
         //creates a vertical stack layout
@@ -26,16 +29,25 @@ struct LiveCameraView: View {
                     .scaledToFill()
                     .ignoresSafeArea()
                     .transition(.opacity)
-            } else {
-                if cameraManager.isSessionRunning {
-                    CameraPreview(session: cameraManager.captureSession)
-                        .ignoresSafeArea()
-                } else {
-                    ProgressView("Loading Camera...")
-                        .foregroundColor(.white)
+            } else if cameraManager.isSessionRunning {
+                CameraPreview(session: cameraManager.captureSession)
+                    .ignoresSafeArea()
+                
+                Button(action: {
+                    cameraManager.capturePhoto()
+                }) {
+                    Text("Take Photo")
+                        .font(.title2)
+                        .padding()
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .clipShape(Capsule())
                 }
             }
-                
+            else {
+                ProgressView("Loading Camera...")
+                    .foregroundColor(.white)
+            }
             //below it creates the button: what it does, and what it looks like within the two sets of {}
             if isPhotoTaken {
                 HStack {
@@ -57,6 +69,11 @@ struct LiveCameraView: View {
                             if success {
                                 showSaveConfirmation = true
                                 print("Photo saved to project folder.")
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    shouldGoToExistingProjects = true
+                                    dismiss()
+                                }
                             } else {
                                 print("Failed to save photo")
                             }
@@ -70,17 +87,6 @@ struct LiveCameraView: View {
                             .clipShape(Capsule())
                     }
                 }
-            } else {
-                Button(action: {
-                    cameraManager.capturePhoto()
-                }) {
-                    Text("Take Photo")
-                        .font(.title2)
-                        .padding()
-                        .background(Color.white)
-                        .foregroundColor(.black)
-                        .clipShape(Capsule())
-                }
             }
         }
         .onChange(of: cameraManager.capturedImage) { //watch anytime this block of code changes
@@ -92,8 +98,7 @@ struct LiveCameraView: View {
         .alert(isPresented: $showSaveConfirmation) {
             Alert(
                 title: Text("Saved"),
-                message: Text("Photo saved to project folder."),
-                dismissButton: .default(Text("OK"))
+                message: Text("Photo saved to project folder.")
             )
         }
     }
@@ -121,5 +126,8 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 #Preview {
-    LiveCameraView(project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"))
+    LiveCameraView(
+        project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"),
+        shouldGoToExistingProjects: .constant(false)
+    )
 }
