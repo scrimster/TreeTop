@@ -1,8 +1,16 @@
 import SwiftUI
 
+enum MainMenuDestination: Hashable {
+    case newProject
+    case existingProjects
+    //in the future adding two more cases for the about and how to pages
+}
+
 struct MainMenuView: View {
+    @State var path: [MainMenuDestination] = []
+    
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 24) {
                 Spacer()
                 
@@ -21,16 +29,24 @@ struct MainMenuView: View {
                 }
 
                 MenuButton(title: "🌳 New Project") {
-                    // Navigate to New Project View
+                    path.append(.newProject)
                 }
 
                 MenuButton(title: "📁 Existing Projects") {
-                    // Navigate to Project List View
+                    path.append(.existingProjects)
                 }
 
                 Spacer()
             }
             .padding()
+            .navigationDestination(for: MainMenuDestination.self) { destination in
+                switch destination {
+                case .newProject:
+                    NewProjectView()
+                case .existingProjects:
+                    ExistingProjectView()
+                }
+            }
         }
     }
 }
