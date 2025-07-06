@@ -1,8 +1,8 @@
-import Foundation
+import UIKit
 
-struct CanopyCaptureSummary: Identifiable {
-    let id = UUID()
+struct CanopyCaptureSummary {
+    let image: UIImage
     let date: Date
-    // Placeholder for future feature
-    var canopyPercentage: Double? = nil
+    let time: String
+    let canopyPercentage: Double
 }

@@ -22,7 +22,7 @@ struct SummaryView: View {
                 VStack(spacing: 16) {
                     summaryRow(label: "Date", value: summary.date.formatted(date: .long, time: .omitted))
                     summaryRow(label: "Time", value: summary.date.formatted(date: .omitted, time: .shortened))
-                    summaryRow(label: "Canopy Coverage", value: "\(summary.canopyPercentage, specifier: "%.1f")%")
+                    summaryRow(label: "Canopy Coverage", value: String(format: "%.1f%%", summary.canopyPercentage))
                 }
                 .padding()
                 .background(Color(.systemGray6))
