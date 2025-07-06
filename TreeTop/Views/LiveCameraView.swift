@@ -13,6 +13,11 @@ struct LiveCameraView: View {
     @StateObject var cameraManager = CameraManager()
     //this is will keep track if the picture was taken or not
     @State var isPhotoTaken = false
+    @State var showSaveConfirmation = false
+    @Environment(\.dismiss) var dismiss
+    
+    var project: Project
+    @Binding var shouldGoToExistingProjects: Bool
     
     var body: some View {
         //creates a vertical stack layout
@@ -24,11 +29,25 @@ struct LiveCameraView: View {
                     .scaledToFill()
                     .ignoresSafeArea()
                     .transition(.opacity)
-            } else {
+            } else if cameraManager.isSessionRunning {
                 CameraPreview(session: cameraManager.captureSession)
                     .ignoresSafeArea()
-            }
                 
+                Button(action: {
+                    cameraManager.capturePhoto()
+                }) {
+                    Text("Take Photo")
+                        .font(.title2)
+                        .padding()
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .clipShape(Capsule())
+                }
+            }
+            else {
+                ProgressView("Loading Camera...")
+                    .foregroundColor(.white)
+            }
             //below it creates the button: what it does, and what it looks like within the two sets of {}
             if isPhotoTaken {
                 HStack {
@@ -43,11 +62,21 @@ struct LiveCameraView: View {
                             .foregroundColor(.black)
                             .clipShape(Capsule())
                     }
-                    //if the image has been captured and you want to save, it saves it to your photo library.
+                    //once you hit save, the captured image should save to the newly created project
                     Button(action: {
                         if let image = cameraManager.capturedImage {
-                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-                            print("Photo saved to library.")
+                            let success = ProjectManager.shared.saveImage(image, to: project)
+                            if success {
+                                showSaveConfirmation = true
+                                print("Photo saved to project folder.")
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    shouldGoToExistingProjects = true
+                                    dismiss()
+                                }
+                            } else {
+                                print("Failed to save photo")
+                            }
                         }
                     }) {
                         Text("Save")
@@ -58,23 +87,19 @@ struct LiveCameraView: View {
                             .clipShape(Capsule())
                     }
                 }
-            } else {
-                Button(action: {
-                    cameraManager.capturePhoto()
-                }) {
-                    Text("Take Photo")
-                        .font(.title2)
-                        .padding()
-                        .background(Color.white)
-                        .foregroundColor(.black)
-                        .clipShape(Capsule())
-                }
             }
         }
         .onChange(of: cameraManager.capturedImage) { //watch anytime this block of code changes
             if cameraManager.capturedImage != nil { //checks if the new photo was taken, if yes then it's bool changes
                 isPhotoTaken = true
             }
+        }
+        
+        .alert(isPresented: $showSaveConfirmation) {
+            Alert(
+                title: Text("Saved"),
+                message: Text("Photo saved to project folder.")
+            )
         }
     }
 }
@@ -101,5 +126,8 @@ struct CameraPreview: UIViewRepresentable {
 }
 
 #Preview {
-    LiveCameraView()
+    LiveCameraView(
+        project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"),
+        shouldGoToExistingProjects: .constant(false)
+    )
 }

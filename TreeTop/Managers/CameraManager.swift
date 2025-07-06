@@ -13,6 +13,7 @@ import SwiftUI
 class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
     
     @Published var capturedImage: UIImage? //this will be able to access the image from outside code
+    @Published var isSessionRunning = false
     
     let captureSession = AVCaptureSession()
     let photoOutput = AVCapturePhotoOutput()
@@ -47,7 +48,13 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
                 
                 //after we're done making changes, we are committing and starting the session
                 captureSession.commitConfiguration()
-                captureSession.startRunning()
+                DispatchQueue.global(qos: .userInitiated).async {
+                    self.captureSession.startRunning()
+                    
+                    DispatchQueue.main.async {
+                        self.isSessionRunning = true
+                    }
+                }
                 
             } catch {
                 print("failed to set-up camera input: ", error)

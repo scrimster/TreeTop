@@ -12,13 +12,16 @@ import SwiftData
 struct TreeTopApp: App {
     @State private var isLoading = true
     var sharedModelContainer: ModelContainer = {
+        
         let schema = Schema([
-            Item.self,
+            Project.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            ProjectManager.shared = ProjectManager(modelContext: container.mainContext)
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
