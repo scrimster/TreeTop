@@ -1,9 +1,8 @@
-import UIKit
-import CoreLocation
+import Foundation
 
-struct CanopyCaptureSummary {
-    let image: UIImage
+struct CanopyCaptureSummary: Identifiable {
+    let id = UUID()
     let date: Date
-    let location: CLLocationCoordinate2D
-    let canopyPercentage: Double
+    // Placeholder for future feature
+    var canopyPercentage: Double? = nil
 }
