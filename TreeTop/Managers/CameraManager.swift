@@ -22,8 +22,34 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
     
     override init() {
         super.init()
-        configureSession() //this section will initialize the camera session settings.
+        configureSession()
+        //checkPermissionsAndConfigure()
+        //this section will initialize the camera session settings.
     }
+    
+//    func checkPermissionsAndConfigure() {
+//        let status = AVCaptureDevice.authorizationStatus(for: .video)
+//        
+//        switch status {
+//        case .authorized:
+//            configureSession()
+//            
+//        case .notDetermined:
+//            AVCaptureDevice.requestAccess(for: .video) {
+//                granted in DispatchQueue.main.async {
+//                    if granted {
+//                        self.configureSession()
+//                    } else {
+//                        print("CameraAccess denied by user")
+//                    }
+//                }
+//            }
+//        case .denied, .restricted:
+//            print("Camera access previously denied or restricted.")
+//        @unknown default:
+//            print("Unknown authorization status")
+//        }
+//    }
     
     func configureSession() {
         //beginning the configuration and using the photo preset given by Apple
@@ -63,6 +89,7 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
             print("No camera found.")
         }
     }
+    
     
     //this function is going to actually capture the photo now that the session is configured. We need to set-up the photo settings before capturing the still photo
     func capturePhoto() {
