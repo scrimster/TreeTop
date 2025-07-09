@@ -17,6 +17,7 @@ struct LiveCameraView: View {
     @Environment(\.dismiss) var dismiss
     
     var project: Project
+    var subfolder: String
     @Binding var shouldGoToExistingProjects: Bool
     
     var body: some View {
@@ -65,7 +66,7 @@ struct LiveCameraView: View {
                     //once you hit save, the captured image should save to the newly created project
                     Button(action: {
                         if let image = cameraManager.capturedImage {
-                            let success = ProjectManager.shared.saveImage(image, to: project)
+                            let success = ProjectManager.shared.saveImage(image, to: project, subfolder: subfolder)
                             if success {
                                 showSaveConfirmation = true
                                 print("Photo saved to project folder.")
@@ -128,6 +129,7 @@ struct CameraPreview: UIViewRepresentable {
 #Preview {
     LiveCameraView(
         project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"),
-        shouldGoToExistingProjects: .constant(false)
+        shouldGoToExistingProjects: .constant(false),
+        subfolder: "Diagonal1/Originals"
     )
 }

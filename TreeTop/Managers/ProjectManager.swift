@@ -25,11 +25,25 @@ class ProjectManager {
     func createProject(name: String, date: Date) -> Project? {
         let folderName = "\(name) - \(UUID().uuidString)"
         let newProject = Project(name: name, date: date, folderName: folderName) //intializes the instance
-        
+
         let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
-        
+
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+
+            // create sub folders for diagonals
+            let d1 = folderURL.appendingPathComponent("Diagonal1")
+            let d2 = folderURL.appendingPathComponent("Diagonal2")
+            let subFolders = [
+                d1.appendingPathComponent("Originals"),
+                d1.appendingPathComponent("Masks"),
+                d2.appendingPathComponent("Originals"),
+                d2.appendingPathComponent("Masks")
+            ]
+            for url in subFolders {
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            }
+
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
             return newProject
@@ -38,10 +52,13 @@ class ProjectManager {
             return nil
         }
     }
-    
+
     //creating the function to save the captured photo to the newly created project folder
-    func saveImage(_ image: UIImage, to project:Project) -> Bool{
-        let folderURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask) [0] .appendingPathComponent(project.folderName)
+    func saveImage(_ image: UIImage, to project:Project, subfolder: String? = nil) -> Bool{
+        var folderURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask) [0] .appendingPathComponent(project.folderName)
+        if let subfolder = subfolder {
+            folderURL.appendPathComponent(subfolder)
+        }
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
@@ -75,5 +92,47 @@ class ProjectManager {
             }
         }
         return images
+    }
+
+    func analyzeImages(in diagonal: String, for project: Project) -> Double? {
+        guard let originals = project.folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Originals"),
+              let masksFolder = project.folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Masks") else { return nil }
+        guard let files = try? FileManager.default.contentsOfDirectory(atPath: originals.path) else { return nil }
+
+        var totals: [Double] = []
+
+        for file in files where file.lowercased().hasSuffix(".jpg") {
+            let imageURL = originals.appendingPathComponent(file)
+            let maskURL = masksFolder.appendingPathComponent(file)
+            if let avg = runModel(inputURL: imageURL, outputURL: maskURL) {
+                totals.append(avg)
+            }
+        }
+
+        guard !totals.isEmpty else { return nil }
+        return totals.reduce(0, +) / Double(totals.count)
+    }
+
+    func createSummary(for project: Project) -> Double? {
+        let d1 = analyzeImages(in: "Diagonal1", for: project)
+        let d2 = analyzeImages(in: "Diagonal2", for: project)
+        var values: [Double] = []
+        if let d1 = d1 { values.append(d1) }
+        if let d2 = d2 { values.append(d2) }
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
+    private func runModel(inputURL: URL, outputURL: URL) -> Double? {
+        // Placeholder for CoreML processing. Replace with real model inference.
+        guard let image = UIImage(contentsOfFile: inputURL.path) else { return nil }
+        guard let data = image.pngData() else { return nil }
+        do {
+            try data.write(to: outputURL)
+        } catch {
+            print("failed to write mask: \(error)")
+        }
+        // Pretend 50% canopy
+        return 0.5
     }
 }

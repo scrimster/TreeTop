@@ -16,7 +16,7 @@ struct ExistingProjectView: View {
     var body: some View {
         List {
             ForEach(projects, id: \.id) { project in
-                NavigationLink (destination: FolderContentsView(folderURL: project.folderURL)) {
+                NavigationLink (destination: ProjectContentsView(project: project)) {
                     VStack(alignment: .leading) {
                         Text(project.name)
                             .font(.headline)
