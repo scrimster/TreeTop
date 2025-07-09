@@ -37,10 +37,10 @@ struct ProjectContentsView: View {
         }
         .navigationTitle("Project Contents")
         .sheet(isPresented: $showDiagonal1Camera) {
-            LiveCameraView(project: project, shouldGoToExistingProjects: .constant(false), subfolder: "Diagonal1/Originals")
+            LiveCameraView(project: project, subfolder: "Diagonal1/Originals", shouldGoToExistingProjects: .constant(false))
         }
         .sheet(isPresented: $showDiagonal2Camera) {
-            LiveCameraView(project: project, shouldGoToExistingProjects: .constant(false), subfolder: "Diagonal2/Originals")
+            LiveCameraView(project: project, subfolder: "Diagonal2/Originals", shouldGoToExistingProjects: .constant(false))
         }
     }
 

@@ -129,7 +129,7 @@ struct CameraPreview: UIViewRepresentable {
 #Preview {
     LiveCameraView(
         project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"),
-        shouldGoToExistingProjects: .constant(false),
-        subfolder: "Diagonal1/Originals"
+        subfolder: "Diagonal1/Originals",
+        shouldGoToExistingProjects: .constant(false)
     )
 }
