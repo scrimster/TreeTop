@@ -39,7 +39,7 @@ struct NewProjectView: View {
         }
         .padding(.top, 50)
         .navigationDestination(item: $createdProject) {
-            project in LiveCameraView(project: project, shouldGoToExistingProjects: $shouldGoToExistingProjects, subfolder: "Diagonal1/Originals")
+            project in LiveCameraView(project: project, subfolder: "Diagonal1/Originals", shouldGoToExistingProjects: $shouldGoToExistingProjects)
                 .onAppear{
                     print("navigating to camera")
                 }
