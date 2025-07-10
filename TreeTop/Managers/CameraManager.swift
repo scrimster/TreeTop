@@ -12,7 +12,7 @@ import SwiftUI
 
 class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
     
-    @Published var capturedImage: UIImage? //this will be able to access the image from outside code
+    @Published var capturedImage: [UIImage] = [] //this will be able to access the image from outside code
     @Published var isSessionRunning = false
     
     let captureSession = AVCaptureSession()
@@ -22,10 +22,10 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
     
     override init() {
         super.init()
-        configureSession() //this section will initialize the camera session settings.
     }
     
-    func configureSession() {
+    
+    func initializeCamera() {
         //beginning the configuration and using the photo preset given by Apple
         captureSession.beginConfiguration()
         captureSession.sessionPreset = .photo
@@ -74,7 +74,7 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
         if let data = photo.fileDataRepresentation(), let image = UIImage(data: data) {
             DispatchQueue.main.async {
-                self.capturedImage = image
+                self.capturedImage.append(image)
             }
         } else {
             print("Failed to capture photo:", error?.localizedDescription ?? "Unknown error")
