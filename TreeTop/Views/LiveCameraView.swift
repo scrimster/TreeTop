@@ -8,30 +8,60 @@
 import SwiftUI
 import AVFoundation
 
+
+//this creates an object where it holds the logic of the camera function in CameraManager(). It monitors it for any change.
 struct LiveCameraView: View {
-    //this creates an object where it holds the logic of the camera function in CameraManager(). It monitors it for any change.
     @StateObject var cameraManager = CameraManager()
-    //this is will keep track if the picture was taken or not
-    @State var isPhotoTaken = false
+    @State var capturedImages: [UIImage] = []
     @State var showSaveConfirmation = false
     @Environment(\.dismiss) var dismiss
+    @State var isPreviewingPhoto = false
+    @State var showConfirmationDialog = false
     
-    var project: Project
-    @Binding var shouldGoToExistingProjects: Bool
+    var saveToURL: URL
     
     var body: some View {
-        //creates a vertical stack layout
-        VStack {
-            //this block switches between the full-screen captured picture and the live camera preview
-            if isPhotoTaken, let image = cameraManager.capturedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-            } else if cameraManager.isSessionRunning {
+         VStack {
+            //photo preview UI
+            if isPreviewingPhoto, let image = capturedImages.last {
+                VStack {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                    
+                    HStack {
+                        Button(action: {
+                            isPreviewingPhoto = false
+                        }) {
+                            Text("Continue Capturing")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .clipShape(Capsule())
+                        }
+                        
+                        Button(action: {
+                            capturedImages.removeLast()
+                            isPreviewingPhoto = false
+                        }) {
+                            Text("Retake")
+                                .font(.title2)
+                                .padding()
+                                .background(Color.red)
+                                .foregroundColor(.white)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .padding()
+                }
+            } //live camera UI
+            else if cameraManager.isSessionRunning {
                 CameraPreview(session: cameraManager.captureSession)
                     .ignoresSafeArea()
+                    .allowsHitTesting(false)
                 
                 Button(action: {
                     cameraManager.capturePhoto()
@@ -43,91 +73,138 @@ struct LiveCameraView: View {
                         .foregroundColor(.black)
                         .clipShape(Capsule())
                 }
-            }
-            else {
-                ProgressView("Loading Camera...")
-                    .foregroundColor(.white)
-            }
-            //below it creates the button: what it does, and what it looks like within the two sets of {}
-            if isPhotoTaken {
-                HStack {
+                //save & thumbnail gallery
+                if !capturedImages.isEmpty {
                     Button(action: {
-                        cameraManager.capturedImage = nil
-                        isPhotoTaken = false
+                        showConfirmationDialog = true
                     }) {
-                        Text("Retake")
+                        Text("Save All")
                             .font(.title2)
                             .padding()
-                            .background(Color.white)
-                            .foregroundColor(.black)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
                             .clipShape(Capsule())
                     }
-                    //once you hit save, the captured image should save to the newly created project
-                    Button(action: {
-                        if let image = cameraManager.capturedImage {
-                            let success = ProjectManager.shared.saveImage(image, to: project)
-                            if success {
-                                showSaveConfirmation = true
-                                print("Photo saved to project folder.")
-                                
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    shouldGoToExistingProjects = true
-                                    dismiss()
+                    .padding(.top)
+                    
+                    if !capturedImages.isEmpty {
+                        Text("\(capturedImages.count) photo\(capturedImages.count == 1 ? "" : "s") captured")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .padding(.bottom, 2)
+                    }
+                    
+                    ScrollViewReader { proxy in
+                        ScrollView(.horizontal, showsIndicators: false){
+                            HStack(spacing: 12) {
+                                ForEach(capturedImages.indices, id: \.self) {
+                                    index in
+                                    Image(uiImage: capturedImages[index])
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 80, height: 80)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+                                        .onTapGesture {
+                                            isPreviewingPhoto = true
+                                            let tappedImage = capturedImages[index]
+                                            capturedImages.remove(at: index)
+                                            capturedImages.append(tappedImage)
+                                        }
+                                        .id(index)
                                 }
-                            } else {
-                                print("Failed to save photo")
+                            }
+                            .padding()
+                        }
+                        .onChange(of: capturedImages.count) { oldCount, newCount in
+                            withAnimation {
+                                proxy.scrollTo(capturedImages.indices.last, anchor: .trailing)
                             }
                         }
-                    }) {
-                        Text("Save")
-                            .font(.title2)
-                            .padding()
-                            .background(Color.white)
-                            .foregroundColor(.black)
-                            .clipShape(Capsule())
                     }
                 }
-            }
+                } else {
+                    ProgressView("Loading Camera...")
+                        .foregroundColor(.white)
+                }
         }
-        .onChange(of: cameraManager.capturedImage) { //watch anytime this block of code changes
-            if cameraManager.capturedImage != nil { //checks if the new photo was taken, if yes then it's bool changes
-                isPhotoTaken = true
-            }
+        .onAppear {
+            cameraManager.initializeCamera()
         }
-        
+        .onChange(of: cameraManager.capturedImage) {
+            capturedImages.append(contentsOf: cameraManager.capturedImage)
+            isPreviewingPhoto = true
+            cameraManager.capturedImage = []
+        }
         .alert(isPresented: $showSaveConfirmation) {
             Alert(
                 title: Text("Saved"),
                 message: Text("Photo saved to project folder.")
             )
         }
+        .confirmationDialog("Save all photos?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
+            Button("Confirm Save", role: .destructive) {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                
+                do {
+                    try FileManager.default.createDirectory(at: saveToURL, withIntermediateDirectories: true)
+                    
+                    let baseTimestamp = dateFormatter.string(from: Date())
+                    
+                    for (index, image) in capturedImages.enumerated() {
+                        let fileName = "image_\(baseTimestamp)_\(String(format: "%02d", index)).jpg"
+                        let fileURL = saveToURL.appendingPathComponent(fileName)
+                        
+                        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+                            print("failed to convert image to JPEG data")
+                            continue
+                        }
+                        
+                        try imageData.write(to: fileURL)
+                        print("saved: \(fileURL.lastPathComponent)")
+                    }
+                    
+                    showSaveConfirmation = true
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        dismiss()
+                    }
+                } catch {
+                    print("failed to save images: \(error)")
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
-}
-
-struct CameraPreview: UIViewRepresentable {
-    let session: AVCaptureSession //creates a constant and defines the datatype
     
-    //this function allows the UIKit to be displayed in SwiftUI, this is required acts like a bridge
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView() //blank container to attach the camera preview to when ready
-        
-        //defining the camera preview we're going to see, the preview takes up the full screen, then attach the preview to the blank view container as a sublayer, then returns the filled in view container.
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = UIScreen.main.bounds
-        view.layer.addSublayer(previewLayer) //
-        
-        return view
-    }
     
-    func updateUIView(_ uiView: UIView, context: Context) {
-        //nothing to update
+    struct CameraPreview: UIViewRepresentable {
+        let session: AVCaptureSession //creates a constant and defines the datatype
+        
+        //this function allows the UIKit to be displayed in SwiftUI, this is required acts like a bridge
+        func makeUIView(context: Context) -> UIView {
+            let view = UIView() //blank container to attach the camera preview to when ready
+            
+            //defining the camera preview we're going to see, the preview takes up the full screen, then attach the preview to the blank view container as a sublayer, then returns the filled in view container.
+            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer.videoGravity = .resizeAspectFill
+            previewLayer.frame = UIScreen.main.bounds
+            view.layer.addSublayer(previewLayer) //
+            
+            return view
+        }
+        
+        func updateUIView(_ uiView: UIView, context: Context) {
+            //nothing to update
+        }
     }
 }
 
 #Preview {
-    LiveCameraView(
-        project: Project(name: "Preview Project", date: Date(), folderName: "PreviewFolder"),
-        shouldGoToExistingProjects: .constant(false)
-    )
-}
+        let exampleURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("PreviewFolder")
+
+        return LiveCameraView(saveToURL: exampleURL)
+    }
