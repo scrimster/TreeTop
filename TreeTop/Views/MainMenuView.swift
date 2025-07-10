@@ -42,7 +42,7 @@ struct MainMenuView: View {
             .navigationDestination(for: MainMenuDestination.self) { destination in
                 switch destination {
                 case .newProject:
-                    NewProjectView()
+                    NewProjectView(path: $path)
                 case .existingProjects:
                     ExistingProjectView()
                 }
