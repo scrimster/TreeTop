@@ -21,8 +21,29 @@ class ProjectManager {
         self.modelContext = modelContext
     }
     
+    
+    
     //this creates a unique folder name using the project name the user inputs and creates a new UUID
     func createProject(name: String, date: Date) -> Project? {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let fetchDescriptor = FetchDescriptor<Project>()
+        
+        do {
+            let existingProjects = try modelContext.fetch(fetchDescriptor)
+            let nameExists = existingProjects.contains {
+                $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedName
+            }
+            
+            if nameExists {
+                print("Duplicate project name detected")
+                return nil
+            }
+        } catch {
+            print("Failed to check for duplicate projects: \(error)")
+            return nil
+            
+        }
+        
         let folderName = "\(name) - \(UUID().uuidString)"
         let newProject = Project(name: name, date: date, folderName: folderName) //intializes the instance
         
@@ -30,6 +51,14 @@ class ProjectManager {
         
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+            let diagonalNames = ["Diagonal 1", "Diagonal 2"]
+            for name in diagonalNames {
+                if let subfolderURL = newProject.subFolderURL(named: name),
+                   let viewContentsURL = newProject.viewContentsURL(forSubfolder: name) {
+                    try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
+                    try FileManager.default.createDirectory(at: viewContentsURL, withIntermediateDirectories: true)
+                }
+            }
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
             return newProject
@@ -39,9 +68,13 @@ class ProjectManager {
         }
     }
     
-    //creating the function to save the captured photo to the newly created project folder
-    func saveImage(_ image: UIImage, to project:Project) -> Bool{
-        let folderURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask) [0] .appendingPathComponent(project.folderName)
+    //creating the function to save the captured photos to the subfolder content view
+
+    func saveImage(_ image: UIImage, to project: Project, inSubFolder subfolder: String) -> Bool{
+        guard let folderURL = project.viewContentsURL(forSubfolder: subfolder) else {
+            print("Invalid subfolder path.")
+            return false
+        }
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
