@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct NewProjectView: View {
+    @Binding var path: [MainMenuDestination] //receives navigation path
     @State var projectName: String = ""
-    @State var createdProject: Project? = nil
-    @State var shouldGoToExistingProjects = false
+    //@State var createdProject: Project? = nil
+    //@State var shouldGoToExistingProjects = false
+    @State var showDuplicateAlert = false
     
     var body: some View {
         VStack(spacing: 30) {
-            Text("Create New Project")
+            Text("Create a Project Name")
                 .font(.title)
                 .bold()
             
@@ -18,13 +20,16 @@ struct NewProjectView: View {
             
             Button(action: {
                 let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
-                if let newProject = newProject {
-                    self.createdProject = newProject
+                if newProject != nil {
+                    path = [.existingProjects]
+                    projectName = ""
+                } else {
+                    showDuplicateAlert = true
                 }
             }) {
                 HStack {
-                    Image(systemName: "camera")
-                    Text("Take Photo")
+                    Image(systemName: "folder.badge.plus")
+                    Text("Create Project")
                         .bold()
                 }
                 .padding()
@@ -34,22 +39,31 @@ struct NewProjectView: View {
                 .cornerRadius(12)
                 .padding(.horizontal)
             }
+            .disabled(projectName.trimmingCharacters(in: .whitespaces).isEmpty)
             
             Spacer()
         }
+        .navigationTitle("New Project Creation")
         .padding(.top, 50)
-        .navigationDestination(item: $createdProject) {
-            project in LiveCameraView(project: project, shouldGoToExistingProjects: $shouldGoToExistingProjects)
-                .onAppear{
-                    print("navigating to camera")
-                }
+        .alert("Project already exists", isPresented: $showDuplicateAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("A project with this name already exists. Please choose a different name.")
         }
-        .navigationDestination(isPresented: $shouldGoToExistingProjects) {
-            ExistingProjectView()
-        }
+        
+//        .navigationDestination(item: $createdProject) {
+//            project in LiveCameraView(project: project, shouldGoToExistingProjects: $shouldGoToExistingProjects)
+//                .onAppear{
+//                    print("navigating to camera")
+//                }
+//        }
+//        
+//        .navigationDestination(isPresented: $shouldGoToExistingProjects) {
+//            ExistingProjectView()
+//        }
     }
 }
 
 #Preview {
-    NewProjectView()
+    NewProjectView(path: .constant([]))
 }
