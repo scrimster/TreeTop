@@ -16,7 +16,7 @@ extension UIImage {
         let status = CVPixelBufferCreate(kCFAllocatorDefault,
                                          Int(size.width),
                                          Int(size.height),
-                                         kCVPixelFormatType_32ARGB,
+                                         kCVPixelFormatType_32BGRA,
                                          attrs,
                                          &pixelBuffer)
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
@@ -29,7 +29,7 @@ extension UIImage {
                                 bitsPerComponent: 8,
                                 bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
                                 space: CGColorSpaceCreateDeviceRGB(),
-                                bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+                                bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
         if let cgImage = cgImage {
             context?.draw(cgImage, in: CGRect(origin: .zero, size: size))
         }
