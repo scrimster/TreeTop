@@ -8,9 +8,23 @@ class MaskGenerator {
     private let model: MLModel?
 
     private init() {
-        if let url = Bundle.main.url(forResource: "imageseg_canopy_model", withExtension: "mlpackage") {
-            model = try? MLModel(contentsOf: url)
+        // When a .mlpackage is added to an Xcode target it is typically
+        // compiled to a `.mlmodelc` directory within the app bundle.
+        // Depending on how the project is configured the compiled directory
+        // may not be present, but the original .mlpackage might be copied
+        // instead.  Try to load the compiled model first and fall back to
+        // compiling the package at runtime if needed.
+        if let compiledURL = Bundle.main.url(forResource: "imageseg_canopy_model", withExtension: "mlmodelc") {
+            model = try? MLModel(contentsOf: compiledURL)
+        } else if let packageURL = Bundle.main.url(forResource: "imageseg_canopy_model", withExtension: "mlpackage") {
+            if let tempURL = try? MLModel.compileModel(at: packageURL) {
+                model = try? MLModel(contentsOf: tempURL)
+            } else {
+                print("[MaskGenerator] Failed to compile mlpackage")
+                model = nil
+            }
         } else {
+            print("[MaskGenerator] Model not found in bundle")
             model = nil
         }
     }
@@ -31,7 +45,17 @@ class MaskGenerator {
                 pixels[i] = UInt8(min(255, max(0, Int(val * 255))))
             }
             let mean = sum / Double(count)
-            if let maskImage = UIImage.grayImage(from: pixels, width: 256, height: 256) {
+            let shape = multiArray.shape.map { $0.intValue }
+            let width: Int
+            let height: Int
+            if shape.count >= 2 {
+                width = shape[shape.count - 2]
+                height = shape[shape.count - 1]
+            } else {
+                width = 256
+                height = 256
+            }
+            if let maskImage = UIImage.grayImage(from: pixels, width: width, height: height) {
                 return (maskImage, mean)
             }
         } catch {
