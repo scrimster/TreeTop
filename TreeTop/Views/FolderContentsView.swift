@@ -15,6 +15,8 @@ struct FolderContentsView: View {
     @State var imagesInViewContents: [UIImage] = []
     @State var selectedImage: UIImage?
     @State var showImagePreview = false
+    @State var summaryResult: SummaryResult?
+    @State var showSummary = false
     
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
@@ -25,9 +27,41 @@ struct FolderContentsView: View {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
         return lastComponent == "View Contents"
     }
+
+    var isPhotosFolder: Bool {
+        folderURL?.lastPathComponent == "Photos"
+    }
+
+    var isMasksFolder: Bool {
+        folderURL?.lastPathComponent == "Masks"
+    }
+
+    var isImageFolder: Bool { isPhotosFolder || isMasksFolder }
+
+    var isProjectFolder: Bool {
+        !(isDiagonalFolder || isViewContents || isImageFolder)
+    }
     
     var body: some View {
         return VStack {
+                if isProjectFolder {
+                    Button(action: {
+                        if let url = folderURL {
+                            summaryResult = SummaryGenerator.createSummary(forProjectAt: url)
+                            showSummary = true
+                        }
+                    }) {
+                        Label("Create Summary", systemImage: "chart.bar")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue.opacity(0.8))
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                    }
+                }
+
                 if isDiagonalFolder {
                     Button (action: {
                         showCamera = true
@@ -43,7 +77,7 @@ struct FolderContentsView: View {
                     }
                 }
                 
-                if isViewContents {
+                if isImageFolder {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 16) {
                             ForEach(imagesInViewContents.indices, id: \.self) { index in
@@ -91,8 +125,15 @@ struct FolderContentsView: View {
                    loadFolderContents()
             }
             .navigationDestination(isPresented: $showCamera) {
-                if let url = folderURL?.appendingPathComponent("View Contents") {
+                if let url = folderURL?.appendingPathComponent("View Contents").appendingPathComponent("Photos") {
                     LiveCameraView(saveToURL: url)
+                } else {
+                    EmptyView()
+                }
+            }
+            .navigationDestination(isPresented: $showSummary) {
+                if let result = summaryResult {
+                    SummaryView(result: result)
                 } else {
                     EmptyView()
                 }
@@ -118,7 +159,7 @@ struct FolderContentsView: View {
                 let fileNames = try FileManager.default.contentsOfDirectory(atPath: folderURL.path)
                 self.files = fileNames
                 
-                if isViewContents {
+                if isImageFolder {
                     self.imagesInViewContents = fileNames
                         .filter { $0.lowercased().hasSuffix(".jpg") }
                         .compactMap { fileName in
