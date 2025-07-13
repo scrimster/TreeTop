@@ -57,6 +57,11 @@ class ProjectManager {
                    let viewContentsURL = newProject.viewContentsURL(forSubfolder: name) {
                     try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: viewContentsURL, withIntermediateDirectories: true)
+
+                    let photosURL = viewContentsURL.appendingPathComponent("Photos")
+                    let masksURL = viewContentsURL.appendingPathComponent("Masks")
+                    try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
+                    try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
                 }
             }
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
