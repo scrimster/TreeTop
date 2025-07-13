@@ -29,22 +29,9 @@
 		EDB99FF52E02361800F9E106 /* TreeTopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreeTopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		BFB741972E244B21008328C3 /* Exceptions for "TreeTop" folder in "Copy Bundle Resources" phase from "TreeTop" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = EDB99FDA2E02361600F9E106 /* Resources */;
-			membershipExceptions = (
-				"Models/CanopyModel - MinReproductionPackage/imageseg_canopy_model.mlpackage",
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		EDB99FDE2E02361600F9E106 /* TreeTop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				BFB741972E244B21008328C3 /* Exceptions for "TreeTop" folder in "Copy Bundle Resources" phase from "TreeTop" target */,
-			);
 			path = TreeTop;
 			sourceTree = "<group>";
 		};
