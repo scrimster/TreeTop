@@ -8,7 +8,11 @@ class MaskGenerator {
     private let model: MLModel?
 
     private init() {
-        if let url = Bundle.main.url(forResource: "imageseg_canopy_model", withExtension: "mlpackage") {
+        // When .mlpackage models are added to an Xcode target they are
+        // automatically compiled to a `.mlmodelc` directory inside the app
+        // bundle.  Loading the original `.mlpackage` will fail because it is
+        // not copied into the bundle.  Look for the compiled model instead.
+        if let url = Bundle.main.url(forResource: "imageseg_canopy_model", withExtension: "mlmodelc") {
             model = try? MLModel(contentsOf: url)
         } else {
             model = nil
