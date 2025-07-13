@@ -5,7 +5,7 @@ struct SummaryView: View {
 
     var body: some View {
         List {
-            ForEach(result.diagonalAverages.keys.sorted(), id: \.<self) { key in
+            ForEach(result.diagonalAverages.keys.sorted(), id: \.self) { key in
                 if let value = result.diagonalAverages[key] {
                     HStack {
                         Text(key)
