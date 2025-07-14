@@ -17,6 +17,7 @@ struct FolderContentsView: View {
     @State var showImagePreview = false
     @State var summaryResult: SummaryResult?
     @State var showSummary = false
+    @State var expandedFolder: String? = nil
     
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
