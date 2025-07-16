@@ -18,6 +18,8 @@ struct FolderContentsView: View {
     @State var summaryResult: SummaryResult?
     @State var showSummary = false
     @State var expandedDiagonal: String? = nil
+    @State var showTakePhotoOptions = false
+    @State var selectedDiagonal: String? = nil
     
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
@@ -60,6 +62,30 @@ struct FolderContentsView: View {
                         .foregroundColor(.white)
                         .cornerRadius(12)
                         .padding(.horizontal)
+                }
+                
+                Button(action: {
+                    showTakePhotoOptions = true
+                }) {
+                    Label("Take Photo", systemImage: "camera")
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                }
+                .confirmationDialog("Choose Diagonal", isPresented: $showTakePhotoOptions, titleVisibility: .visible) {
+                    Button("Diagonal 1") {
+                        selectedDiagonal = "Diagonal 1"
+                        showCamera = true
+                    }
+                    Button("Diagonal 2") {
+                        selectedDiagonal = "Diagonal 2"
+                        showCamera = true
+                    }
+                    Button("Cancel", role: .cancel) {}
                 }
             }
             
@@ -134,38 +160,48 @@ struct FolderContentsView: View {
                 .animation(.easeInOut(duration: 0.3), value: expandedDiagonal)
             }
         }
-            .navigationTitle("Project Contents")
-               .onAppear{
-                   loadFolderContents()
+        .navigationTitle("Project Contents")
+           .onAppear{
+               loadFolderContents()
+           }
+        .navigationDestination(isPresented: $showCamera) {
+           if let diagonal = selectedDiagonal,
+              let folder = folderURL?
+            .appendingPathComponent(diagonal)
+            .appendingPathComponent("Photos") {
+               LiveCameraView(saveToURL: folder)
+           } else {
+               EmptyView()
+           }
+       }
+//            .navigationDestination(isPresented: $showCamera) {
+//                if let url = folderURL?.appendingPathComponent("Photos") {
+//                    LiveCameraView(saveToURL: url)
+//                } else {
+//                    EmptyView()
+//                }
+//            }
+        .navigationDestination(isPresented: $showSummary) {
+            if let result = summaryResult {
+                SummaryView(result: result)
+            } else {
+                EmptyView()
             }
-            .navigationDestination(isPresented: $showCamera) {
-                if let url = folderURL?.appendingPathComponent("Photos") {
-                    LiveCameraView(saveToURL: url)
-                } else {
-                    EmptyView()
-                }
-            }
-            .navigationDestination(isPresented: $showSummary) {
-                if let result = summaryResult {
-                    SummaryView(result: result)
-                } else {
-                    EmptyView()
-                }
-            }
-            .sheet(isPresented: $showImagePreview) {
-                if let image = selectedImage {
-                    VStack {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding()
-                        Button("Close") {
-                            showImagePreview = false
-                        }
+        }
+        .sheet(isPresented: $showImagePreview) {
+            if let image = selectedImage {
+                VStack {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
                         .padding()
+                    Button("Close") {
+                        showImagePreview = false
                     }
+                    .padding()
                 }
             }
+        }
         
         func loadFolderContents() {
             guard let folderURL = folderURL else{return}
@@ -212,19 +248,19 @@ struct DiagonalContentsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Button(action: {
-                showCamera = true
-            }) {
-                Label("Take Photo", systemImage: "camera")
-                    .font(.headline)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-            }
-            .transaction { $0.disablesAnimations = true }
+//            Button(action: {
+//                showCamera = true
+//            }) {
+//                Label("Take Photo", systemImage: "camera")
+//                    .font(.headline)
+//                    .padding()
+//                    .frame(maxWidth: .infinity)
+//                    .background(Color.green)
+//                    .foregroundColor(.white)
+//                    .cornerRadius(10)
+//                    .padding(.horizontal)
+//            }
+//            .transaction { $0.disablesAnimations = true }
             
             NavigationLink(
                 destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos")
