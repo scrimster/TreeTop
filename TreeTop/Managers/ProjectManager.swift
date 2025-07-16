@@ -53,15 +53,23 @@ class ProjectManager {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
             let diagonalNames = ["Diagonal 1", "Diagonal 2"]
             for name in diagonalNames {
-                if let subfolderURL = newProject.subFolderURL(named: name),
-                   let viewContentsURL = newProject.viewContentsURL(forSubfolder: name) {
+                if let projectFolder = newProject.folderURL {
+                    let subfolderURL = projectFolder.appendingPathComponent(name)
                     try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
-                    try FileManager.default.createDirectory(at: viewContentsURL, withIntermediateDirectories: true)
-
-                    let photosURL = viewContentsURL.appendingPathComponent("Photos")
-                    let masksURL = viewContentsURL.appendingPathComponent("Masks")
+                    
+                    let photosURL = subfolderURL.appendingPathComponent("Photos")
+                    let masksURL = subfolderURL.appendingPathComponent("Masks")
                     try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
+                    
+//                   let viewContentsURL = newProject.viewContentsURL(forSubfolder: name) {
+//                    try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
+//                    try FileManager.default.createDirectory(at: viewContentsURL, withIntermediateDirectories: true)
+//
+//                    let photosURL = viewContentsURL.appendingPathComponent("Photos")
+//                    let masksURL = viewContentsURL.appendingPathComponent("Masks")
+//                    try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
+//                    try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
                 }
             }
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
@@ -75,8 +83,23 @@ class ProjectManager {
     
     //creating the function to save the captured photos to the subfolder content view
 
-    func saveImage(_ image: UIImage, to project: Project, inSubFolder subfolder: String) -> Bool{
-        guard let folderURL = project.viewContentsURL(forSubfolder: subfolder) else {
+    func saveImage(_ image: UIImage, to project: Project, inSubFolder subfolder: String, type: String = "Photos") -> Bool {
+        let folderURL: URL?
+        
+        if type == "Photos" {
+            folderURL = project.photoFolderURL(forDiagonal: subfolder)
+        } else if type == "Masks" {
+            folderURL = project.maskFolderURL(forDiagonal: subfolder)
+        } else {
+            print("Invalid image type. Must be 'Photos' or 'Masks'.")
+            return false
+        }
+//        guard let folderURL = project.viewContentsURL(forSubfolder: subfolder) else {
+//            print("Invalid subfolder path.")
+//            return false
+//        }
+        
+        guard let folderURL = folderURL else {
             print("Invalid subfolder path.")
             return false
         }
@@ -93,7 +116,7 @@ class ProjectManager {
         
         do {
             try imageData.write(to: fileURL)
-            print("Image saved to folder")
+            print("Image saved to folder: \(fileURL.path)")
             return true
         } catch {
             print("Error saving image: \(error)")

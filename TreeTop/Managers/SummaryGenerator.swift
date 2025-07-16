@@ -15,11 +15,9 @@ class SummaryGenerator {
             let diagName = "Diagonal \(i)"
             let photosURL = url
                 .appendingPathComponent(diagName)
-                .appendingPathComponent("View Contents")
                 .appendingPathComponent("Photos")
             let masksURL = url
                 .appendingPathComponent(diagName)
-                .appendingPathComponent("View Contents")
                 .appendingPathComponent("Masks")
             var values: [Double] = []
             if let files = try? FileManager.default.contentsOfDirectory(atPath: photosURL.path) {

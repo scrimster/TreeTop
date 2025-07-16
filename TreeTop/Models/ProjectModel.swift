@@ -35,11 +35,18 @@ class Project {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(folderName)
     }
     
-    func subFolderURL(named subfolder: String) -> URL? {
-        return folderURL?.appendingPathComponent(subfolder)
+    func photoFolderURL(forDiagonal diagonal: String) -> URL? {
+        return folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Photos")
     }
     
-    func viewContentsURL(forSubfolder subfolder: String) -> URL? {
-        return subFolderURL(named: subfolder)?.appendingPathComponent("View Contents")
+    func maskFolderURL(forDiagonal diagonal: String) -> URL? {
+        return folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Masks")
     }
+//    func subFolderURL(named subfolder: String) -> URL? {
+//        return folderURL?.appendingPathComponent(subfolder)
+//    }
+//    
+//    func viewContentsURL(forSubfolder subfolder: String) -> URL? {
+//        return subFolderURL(named: subfolder)?.appendingPathComponent("View Contents")
+//    }
 }
