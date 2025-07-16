@@ -124,12 +124,14 @@ struct FolderContentsView: View {
                                 
                                 if expandedDiagonal == file {
                                     DiagonalContentsView(folderName: file, baseURL: folderURL!)
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
                                 }
                             }
+                            .id(file)
                         }
                     }
                 }
+                .animation(.easeInOut(duration: 0.3), value: expandedDiagonal)
             }
         }
             .navigationTitle("Project Contents")
@@ -222,6 +224,7 @@ struct DiagonalContentsView: View {
                     .cornerRadius(10)
                     .padding(.horizontal)
             }
+            .transaction { $0.disablesAnimations = true }
             
             NavigationLink(
                 destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos")
@@ -241,6 +244,7 @@ struct DiagonalContentsView: View {
                     .padding(.horizontal)
             }
         }
+        
         .padding(.vertical, 10)
         .background(Color(.systemBackground))
         .sheet(isPresented: $showCamera) {
