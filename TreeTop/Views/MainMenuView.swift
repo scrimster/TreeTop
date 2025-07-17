@@ -3,6 +3,8 @@ import SwiftUI
 enum MainMenuDestination: Hashable {
     case newProject
     case existingProjects
+    case about
+    case howTo
     //in the future adding two more cases for the about and how to pages
 }
 
@@ -21,11 +23,11 @@ struct MainMenuView: View {
 
                 // Menu Buttons
                 MenuButton(title: "🌿 About TreeTop") {
-                    // Navigate to About View
+                    path.append(.about)
                 }
 
                 MenuButton(title: "📖 How to Use App") {
-                    // Navigate to How-To View
+                    path.append(.howTo)
                 }
 
                 MenuButton(title: "🌳 New Project") {
@@ -45,6 +47,10 @@ struct MainMenuView: View {
                     NewProjectView(path: $path)
                 case .existingProjects:
                     ExistingProjectView()
+                case .about:
+                    AboutTreeTopView()
+                case .howTo:
+                    HowToUseAppView()
                 }
             }
         }
