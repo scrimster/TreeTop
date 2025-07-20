@@ -6,6 +6,7 @@ struct NewProjectView: View {
     //@State var createdProject: Project? = nil
     //@State var shouldGoToExistingProjects = false
     @State var showDuplicateAlert = false
+    @StateObject private var locationManager = LocationManager()
     
     var body: some View {
         VStack(spacing: 30) {
@@ -19,6 +20,15 @@ struct NewProjectView: View {
                 .padding(.horizontal)
             
             Button(action: {
+                var locationModel: LocationModel? = nil
+                
+                if let location = locationManager.currentLocation {
+                    locationModel = LocationModel(
+                        latitude: location.coordinate.latitude,
+                        longitude: location.coordinate.longitude
+                    )
+                }
+                
                 let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
                 if newProject != nil {
                     path = [.existingProjects]

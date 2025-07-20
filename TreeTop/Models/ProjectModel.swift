@@ -18,16 +18,17 @@ class Project {
     
     //@Attribute(.transformable(by: StringArrayTransformer.self))
     var imagePaths: [String] = [] //stores the file paths as string to any images associated with the project. when the user adds a photo, we'll save it to disk and append the file path
-    
+    var location: LocationModel?
     //@Attribute(.transformable(by: DoubleArrayTransformer.self))
     //var canopyCoverageResults: [Double] = [] //store the percentage canopy coverage values
     
     //defining an initialization to create a new project
-    init(name: String, date: Date, folderName: String) {
+    init(name: String, date: Date, folderName: String, location: LocationModel?) {
         self.id = UUID()
         self.name = name
         self.date = date
         self.folderName = folderName
+        self.location = location
         //self.imagePaths = []
     }
     
