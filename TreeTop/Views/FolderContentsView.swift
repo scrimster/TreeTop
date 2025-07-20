@@ -210,7 +210,7 @@ struct FolderContentsView: View {
                                     if expandedDiagonal == file {
                                         DiagonalContentsView(folderName: file, baseURL: folderURL!)
                                             .transition(.asymmetric(
-                                                insertion: .opacity.combined(with: .scale(scale: 0.95)).combined(with: .move(edge: .top)),
+                                                insertion: .opacity.combined(with: .scale(scale: 0.95)),
                                                 removal: .opacity.combined(with: .scale(scale: 0.95))
                                             ))
                                     }
