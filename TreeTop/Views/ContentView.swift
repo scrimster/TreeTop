@@ -10,6 +10,10 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         MainMenuView()
+            .onAppear {
+                // Lock to portrait orientation
+                AppDelegate.orientationLock = UIInterfaceOrientationMask.portrait
+            }
     }
 }
 

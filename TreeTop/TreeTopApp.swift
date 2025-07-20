@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct TreeTopApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var modelContainer: ModelContainer?
     @State private var initializationError: String?
 

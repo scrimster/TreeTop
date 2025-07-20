@@ -21,8 +21,9 @@ struct NewProjectView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.4, green: 0.8, blue: 0.6),
-                                    Color(red: 0.3, green: 0.7, blue: 0.4)
+                                    Color(red: 0.4, green: 0.95, blue: 0.7),
+                                    Color(red: 0.2, green: 0.8, blue: 0.4),
+                                    Color(red: 0.1, green: 0.6, blue: 0.2)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -34,7 +35,7 @@ struct NewProjectView: View {
                         .glassText()
                         .multilineTextAlignment(.center)
                     
-                    Text("Enter a unique name for your forest analysis project")
+                    Text("Enter a unique name for your project")
                         .font(.system(.body, design: .rounded))
                         .glassTextSecondary(opacity: 0.7)
                         .multilineTextAlignment(.center)

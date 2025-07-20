@@ -5,7 +5,6 @@ enum MainMenuDestination: Hashable {
     case existingProjects
     case about
     case howTo
-    //in the future adding two more cases for the about and how to pages
 }
 
 struct MainMenuView: View {
@@ -22,8 +21,20 @@ struct MainMenuView: View {
                     
                     // App title with enhanced styling
                     VStack(spacing: 8) {
-                        Text("🌲")
+                        // Tree icon without glow effect
+                        Image(systemName: "tree.fill")
                             .font(.system(size: 60))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white,
+                                        Color(red: 0.95, green: 1.0, blue: 0.98)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
                         Text("TreeTop")
                             .font(.system(size: 42, weight: .bold, design: .rounded))
                             .foregroundStyle(
@@ -42,20 +53,22 @@ struct MainMenuView: View {
 
                     // Menu Buttons with enhanced styling
                     VStack(spacing: 16) {
-                        MenuButton(emoji: "🌿", title: "About TreeTop") {
-                            path.append(.about)
-                        }
-
-                        MenuButton(emoji: "📖", title: "How to Use App") {
-                            path.append(.howTo)
-                        }
-
-                        MenuButton(emoji: "🌳", title: "New Project") {
+                        // Large New Project button
+                        LargeMenuButton(icon: "plus.circle.fill", title: "New Project") {
                             path.append(.newProject)
                         }
 
-                        MenuButton(emoji: "📁", title: "Existing Projects") {
+                        // Smaller rectangular buttons
+                        SmallMenuButton(icon: "folder.fill", title: "Existing Projects") {
                             path.append(.existingProjects)
+                        }
+
+                        SmallMenuButton(icon: "book.fill", title: "How to Use App") {
+                            path.append(.howTo)
+                        }
+
+                        SmallMenuButton(icon: "info.circle.fill", title: "About TreeTop") {
+                            path.append(.about)
                         }
                     }
 
@@ -79,24 +92,61 @@ struct MainMenuView: View {
     }
 }
 
-struct MenuButton: View {
-    let emoji: String
+struct LargeMenuButton: View {
+    let icon: String
     let title: String
     let action: () -> Void
     
     var body: some View {
         LiquidGlassButton(cornerRadius: 20, action: action) {
-            VStack(spacing: 10) {
-                Text(emoji)
-                    .font(.system(size: 36))
+            VStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.4, green: 0.95, blue: 0.7),
+                                Color(red: 0.2, green: 0.8, blue: 0.4),
+                                Color(red: 0.1, green: 0.6, blue: 0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                 Text(title)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .glassText()
                     .multilineTextAlignment(.center)
             }
-            .frame(width: 160, height: 80)
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .frame(height: 100)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
         }
     }
 }
 
+struct SmallMenuButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        LiquidGlassButton(cornerRadius: 16, action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                Text(title)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .glassText()
+                    .multilineTextAlignment(.leading)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+        }
+    }
+}
