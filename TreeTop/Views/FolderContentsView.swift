@@ -52,6 +52,38 @@ struct FolderContentsView: View {
         !(isDiagonalFolder || isViewContents || isImageFolder)
     }
     
+    var projectName: String {
+        guard let folderURL = folderURL else { return "Project Contents" }
+        
+        // If we're in a subfolder, get the parent folder name
+        if isDiagonalFolder || isViewContents || isImageFolder {
+            let parentURL = folderURL.deletingLastPathComponent()
+            let parentName = parentURL.lastPathComponent
+            return extractProjectName(from: parentName)
+        } else {
+            // We're in the main project folder
+            let folderName = folderURL.lastPathComponent
+            return extractProjectName(from: folderName)
+        }
+    }
+    
+    private func extractProjectName(from folderName: String) -> String {
+        // UUIDs have the format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+        // Look for " - " followed by UUID pattern at the end
+        let uuidPattern = " - [A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$"
+        
+        if let regex = try? NSRegularExpression(pattern: uuidPattern, options: [.caseInsensitive]) {
+            let range = NSRange(location: 0, length: folderName.count)
+            if let match = regex.firstMatch(in: folderName, options: [], range: range) {
+                let projectPart = String(folderName.prefix(match.range.location)).trimmingCharacters(in: .whitespaces)
+                return projectPart.isEmpty ? "Project Contents" : projectPart
+            }
+        }
+        
+        // Fallback: if regex fails or no UUID found, return the whole name
+        return folderName.isEmpty ? "Project Contents" : folderName
+    }
+    
     var body: some View {
         ZStack {
             AnimatedForestBackground()
@@ -259,7 +291,7 @@ struct FolderContentsView: View {
             }
         }
     }
-            .navigationTitle("Project Contents")
+            .navigationTitle(projectName)
                .onAppear{
                    loadFolderContents()
                }
