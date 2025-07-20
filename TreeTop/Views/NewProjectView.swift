@@ -3,48 +3,90 @@ import SwiftUI
 struct NewProjectView: View {
     @Binding var path: [MainMenuDestination] //receives navigation path
     @State var projectName: String = ""
-    //@State var createdProject: Project? = nil
-    //@State var shouldGoToExistingProjects = false
     @State var showDuplicateAlert = false
     
     var body: some View {
-        VStack(spacing: 30) {
-            Text("Create a Project Name")
-                .font(.title)
-                .bold()
+        ZStack {
+            // Breathing animated background
+            AnimatedForestBackground()
+                .ignoresSafeArea()
             
-            // Project name input
-            TextField("Enter project name", text: $projectName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-            
-            Button(action: {
-                let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
-                if newProject != nil {
-                    path = [.existingProjects]
-                    projectName = ""
-                } else {
-                    showDuplicateAlert = true
+            VStack(spacing: 40) {
+                Spacer()
+                
+                // Header section
+                VStack(spacing: 16) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.4, green: 0.8, blue: 0.6),
+                                    Color(red: 0.3, green: 0.7, blue: 0.4)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Text("Create New Project")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .glassText()
+                        .multilineTextAlignment(.center)
+                    
+                    Text("Enter a unique name for your forest analysis project")
+                        .font(.system(.body, design: .rounded))
+                        .glassTextSecondary(opacity: 0.7)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
-            }) {
-                HStack {
-                    Image(systemName: "folder.badge.plus")
-                    Text("Create Project")
-                        .bold()
+                
+                // Input section
+                LiquidGlassCard(cornerRadius: 20) {
+                    VStack(spacing: 24) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Project Name")
+                                .font(.system(.headline, design: .rounded, weight: .semibold))
+                                .glassText()
+                            
+                            TextField("Enter project name", text: $projectName)
+                                .font(.system(.body, design: .rounded))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.15, shadowRadius: 4)
+                                .glassText()
+                        }
+                        
+                        LiquidGlassButton(cornerRadius: 14, action: {
+                            let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
+                            if newProject != nil {
+                                path = [.existingProjects]
+                                projectName = ""
+                            } else {
+                                showDuplicateAlert = true
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                Text("Create Project")
+                                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                                    .glassText()
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                        }
+                        .disabled(projectName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                    .padding(20)
                 }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.green.opacity(0.8))
-                .foregroundColor(.white)
-                .cornerRadius(12)
                 .padding(.horizontal)
+                
+                Spacer()
             }
-            .disabled(projectName.trimmingCharacters(in: .whitespaces).isEmpty)
-            
-            Spacer()
         }
-        .navigationTitle("New Project Creation")
-        .padding(.top, 50)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .alert("Project already exists", isPresented: $showDuplicateAlert) {
             Button("OK", role: .cancel) { }
         } message: {

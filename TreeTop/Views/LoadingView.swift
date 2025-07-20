@@ -7,30 +7,59 @@ struct LoadingView: View {
     
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            // Use the same breathing background as the main app - ensures no flash  
+            AnimatedForestBackground()
                 .ignoresSafeArea()
             
-            VStack(spacing: 30) {
-                // Simplified app icon
-                Image(systemName: "tree")
-                    .font(.system(size: 60))
-                    .foregroundColor(.green)
-                
+            // Add a subtle overlay to ensure immediate visual feedback
+            Color.clear
+                .background(.ultraThinMaterial.opacity(0.1))
+                .ignoresSafeArea()
+            
+            VStack(spacing: 40) {
+                // App logo with enhanced styling
                 VStack(spacing: 16) {
-                    Text("TreeTop")
-                        .font(.largeTitle)
-                        .bold()
-                        .foregroundColor(.primary)
+                    // Tree icon with glow effect
+                    Image(systemName: "tree.fill")
+                        .font(.system(size: 80))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color.white,
+                                    Color(red: 0.95, green: 1.0, blue: 0.98)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .white.opacity(0.5), radius: 10, x: 0, y: 0)
                     
+                    Text("TreeTop")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color.white,
+                                    Color(red: 0.95, green: 1.0, blue: 0.98)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .white.opacity(0.4), radius: 4, x: 0, y: 0)
+                }
+                
+                VStack(spacing: 20) {
+                    // Simple progress view - no glass effects during startup
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .green))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(1.2)
 
                     Text(currentMessage + dots)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .glassText()
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 32)
                         .frame(minHeight: 40)
                 }
             }

@@ -13,34 +13,56 @@ struct MainMenuView: View {
     
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 24) {
-                Spacer()
+            ZStack {
+                // Animated forest background
+                AnimatedForestBackground()
                 
-                Text("TreeTop")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.bottom, 10)
+                VStack(spacing: 32) {
+                    Spacer()
+                    
+                    // App title with enhanced styling
+                    VStack(spacing: 8) {
+                        Text("🌲")
+                            .font(.system(size: 60))
+                        Text("TreeTop")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.white, Color(red: 0.9, green: 1.0, blue: 0.95)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        Text("Forest Canopy Analysis")
+                            .font(.subheadline)
+                            .glassTextSecondary(opacity: 0.8)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.bottom, 20)
 
-                // Menu Buttons
-                MenuButton(title: "🌿 About TreeTop") {
-                    path.append(.about)
+                    // Menu Buttons with enhanced styling
+                    VStack(spacing: 16) {
+                        MenuButton(emoji: "🌿", title: "About TreeTop") {
+                            path.append(.about)
+                        }
+
+                        MenuButton(emoji: "📖", title: "How to Use App") {
+                            path.append(.howTo)
+                        }
+
+                        MenuButton(emoji: "🌳", title: "New Project") {
+                            path.append(.newProject)
+                        }
+
+                        MenuButton(emoji: "📁", title: "Existing Projects") {
+                            path.append(.existingProjects)
+                        }
+                    }
+
+                    Spacer()
                 }
-
-                MenuButton(title: "📖 How to Use App") {
-                    path.append(.howTo)
-                }
-
-                MenuButton(title: "🌳 New Project") {
-                    path.append(.newProject)
-                }
-
-                MenuButton(title: "📁 Existing Projects") {
-                    path.append(.existingProjects)
-                }
-
-                Spacer()
+                .padding()
             }
-            .padding()
             .navigationDestination(for: MainMenuDestination.self) { destination in
                 switch destination {
                 case .newProject:
@@ -58,20 +80,23 @@ struct MainMenuView: View {
 }
 
 struct MenuButton: View {
+    let emoji: String
     let title: String
     let action: () -> Void
-
+    
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .foregroundColor(.white)
-                .background(Color.green)
-                .cornerRadius(16)
-                .font(.headline)
+        LiquidGlassButton(cornerRadius: 20, action: action) {
+            VStack(spacing: 10) {
+                Text(emoji)
+                    .font(.system(size: 36))
+                Text(title)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .glassText()
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 160, height: 80)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal)
     }
 }
 

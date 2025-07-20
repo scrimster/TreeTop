@@ -53,7 +53,11 @@ struct FolderContentsView: View {
     }
     
     var body: some View {
-        ScrollView {
+        ZStack {
+            AnimatedForestBackground()
+                .ignoresSafeArea()
+            
+            ScrollView {
         VStack(alignment: .leading, spacing: 16) {
             if isProjectFolder {
                 VStack(spacing: 12) {
@@ -91,17 +95,19 @@ struct FolderContentsView: View {
                             if isGeneratingSummary {
                                 ProgressView()
                                     .scaleEffect(0.8)
-                                    .foregroundColor(.white)
+                                    .glassText()
                                 Text("Analyzing...")
+                                    .glassText()
                             } else {
                                 Label("Create Summary", systemImage: "chart.bar")
+                                    .glassText()
                             }
                         }
                         .font(.headline)
                         .padding()
                         .frame(maxWidth: .infinity)
                         .background(isGeneratingSummary ? Color.gray : Color.blue.opacity(0.8))
-                        .foregroundColor(.white)
+                        .glassText()
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
@@ -116,14 +122,14 @@ struct FolderContentsView: View {
                             
                             Text(summaryProgressMessage)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .glassTextSecondary()
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                             
                             if summaryProgress.total > 0 {
                                 Text("\(summaryProgress.current) / \(summaryProgress.total) images processed")
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .glassTextSecondary()
                             }
                             
                             Button("Cancel Analysis") {
@@ -145,10 +151,10 @@ struct FolderContentsView: View {
                     }) {
                         Label("Take Photo", systemImage: "camera")
                             .font(.headline)
+                            .glassText()
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(Color.green)
-                            .foregroundColor(.white)
                             .cornerRadius(12)
                             .padding(.horizontal)
                     }
@@ -164,16 +170,16 @@ struct FolderContentsView: View {
                         Button("Cancel", role: .cancel) {}
                     }
                     
-                    VStack(spacing: 0) {
+                    VStack(spacing: 12) {
                         ForEach(files, id: \.self) { file in
                             let fullPath = folderURL?.appendingPathComponent(file)
                             var isDirectory: ObjCBool = false
                             
                             if let fullPath = fullPath,
                                FileManager.default.fileExists(atPath: fullPath.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                                VStack(alignment: .leading, spacing:0){
-                                    Button(action: {
-                                        withAnimation {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    LiquidGlassButton(cornerRadius: 14, action: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
                                             if expandedDiagonal == file {
                                                 expandedDiagonal = nil
                                             } else {
@@ -181,17 +187,35 @@ struct FolderContentsView: View {
                                             }
                                         }
                                     }) {
-                                        Label(file, systemImage: "folder")
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding()
-                                            .background(Color(.secondarySystemBackground))
+                                        HStack {
+                                            Image(systemName: expandedDiagonal == file ? "folder.fill" : "folder")
+                                                .glassTextSecondary(opacity: 0.85)
+                                                .font(.system(size: 20))
+                                            
+                                            Text(file)
+                                                .glassText()
+                                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: expandedDiagonal == file ? "chevron.down" : "chevron.right")
+                                                .glassTextSecondary(opacity: 0.6)
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .animation(.easeInOut(duration: 0.2), value: expandedDiagonal == file)
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 14)
                                     }
                                     
                                     if expandedDiagonal == file {
                                         DiagonalContentsView(folderName: file, baseURL: folderURL!)
-                                            .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
+                                            .transition(.asymmetric(
+                                                insertion: .opacity.combined(with: .scale(scale: 0.95)).combined(with: .move(edge: .top)),
+                                                removal: .opacity.combined(with: .scale(scale: 0.95))
+                                            ))
                                     }
                                 }
+                                .padding(.horizontal, 4)
                                 .id(file)
                             }
                         }
@@ -277,11 +301,12 @@ struct FolderContentsView: View {
                     }
                 }
             }
-            .alert("Summary Generation Failed", isPresented: $showSummaryError) {
-                Button("OK") { }
-            } message: {
-                Text(summaryErrorMessage)
-            }
+        }
+        .alert("Summary Generation Failed", isPresented: $showSummaryError) {
+            Button("OK") { }
+        } message: {
+            Text(summaryErrorMessage)
+        }
         }
 
         
@@ -328,42 +353,62 @@ struct DiagonalContentsView: View {
     @State private var showCamera = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-//            Button(action: {
-//                showCamera = true
-//            }) {
-//                Label("Take Photo", systemImage: "camera")
-//                    .font(.headline)
-//                    .padding()
-//                    .frame(maxWidth: .infinity)
-//                    .background(Color.green)
-//                    .foregroundColor(.white)
-//                    .cornerRadius(10)
-//                    .padding(.horizontal)
-//            }
-//            .transaction { $0.disablesAnimations = true }
-            
-            NavigationLink(
-                destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos")
-                                               )
-            ) {
-                Label("View Photos", systemImage: "folder")
-                    .padding(.horizontal)
+        LiquidGlassCard(cornerRadius: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                NavigationLink(
+                    destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos")
+                                                   )
+                ) {
+                    HStack {
+                        Image(systemName: "photo.on.rectangle")
+                            .foregroundColor(.white.opacity(0.85))
+                            .font(.system(size: 16))
+                        
+                        Text("View Photos")
+                            .foregroundColor(.white.opacity(0.95))
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                NavigationLink(
+                    destination: FolderContentsView(
+                        folderURL: baseURL
+                            .appendingPathComponent(folderName)
+                            .appendingPathComponent("Masks"))
+                ) {
+                    HStack {
+                        Image(systemName: "rectangle.on.rectangle")
+                            .foregroundColor(.white.opacity(0.85))
+                            .font(.system(size: 16))
+                        
+                        Text("View Masks")
+                            .foregroundColor(.white.opacity(0.95))
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            
-            NavigationLink(
-                destination: FolderContentsView(
-                    folderURL: baseURL
-                        .appendingPathComponent(folderName)
-                        .appendingPathComponent("Masks"))
-            ) {
-                Label("View Masks", systemImage: "folder")
-                    .padding(.horizontal)
-            }
+            .padding(12)
         }
-        
-        .padding(.vertical, 10)
-        .background(Color(.systemBackground))
         .sheet(isPresented: $showCamera) {
             let saveURL = baseURL.appendingPathComponent(folderName)
                 .appendingPathComponent("Photos")
