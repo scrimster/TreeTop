@@ -15,10 +15,29 @@ class ProjectManager {
     static var shared: ProjectManager! //allows the instance to access the ProjectManage from anywhere
     
     let modelContext: ModelContext
+    private let initializationQueue = DispatchQueue(label: "com.treetop.projectmanager", qos: .userInitiated)
     
     //initializes the manage with the given SwiftData model context
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+        print("✅ ProjectManager initialized successfully")
+    }
+    
+    // Pre-warm any expensive operations
+    func preloadData() {
+        initializationQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Pre-load project count to warm up SwiftData
+            do {
+                var fetchDescriptor = FetchDescriptor<Project>()
+                fetchDescriptor.fetchLimit = 1
+                let _ = try self.modelContext.fetch(fetchDescriptor)
+                print("✅ ProjectManager data preloaded")
+            } catch {
+                print("⚠️ Failed to preload ProjectManager data: \(error)")
+            }
+        }
     }
     
     
