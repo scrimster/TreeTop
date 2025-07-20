@@ -33,39 +33,75 @@ struct TreeTopApp: App {
                         .modelContainer(container)
                 } else {
                     LoadingView()
+                        .onAppear {
+                            print("📱 App showing LoadingView - isLoading: \(isLoading), modelContainer: \(modelContainer != nil)")
+                        }
                 }
             }
-            .onAppear {
+            .task {
+                // Use .task instead of .onAppear for better async handling
+                print("🚀 App task started - initializing model container")
                 initializeModelContainer()
             }
         }
     }
     
     private func initializeModelContainer() {
-        // Show loading immediately but don't block UI
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let schema = Schema([Project.self])
-                let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-                let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-                
-                DispatchQueue.main.async {
-                    // Initialize ProjectManager on main thread to access mainContext
-                    let projectManager = ProjectManager(modelContext: container.mainContext)
-                    ProjectManager.shared = projectManager
-                    self.modelContainer = container
-                    self.isLoading = false
+        sendLoadingMessage("Starting initialization...")
+        print("⏱️ Starting ModelContainer initialization...")
+        
+        // Add a small delay so users can see the loading screen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Show loading immediately but don't block UI
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    DispatchQueue.main.async {
+                        self.sendLoadingMessage("Creating database schema...")
+                    }
+                    print("🔧 Creating schema and configuration...")
+                    let schema = Schema([Project.self])
+                    let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
                     
-                    // Preload data after UI is shown to improve perceived performance
-                    ProjectManager.shared.preloadData()
-                }
-                
-            } catch {
-                DispatchQueue.main.async {
-                    self.initializationError = "Could not initialize database: \(error.localizedDescription)"
-                    self.isLoading = false
+                    // Small delay to show the message
+                    Thread.sleep(forTimeInterval: 0.2)
+                    
+                    DispatchQueue.main.async {
+                        self.sendLoadingMessage("Setting up database container...")
+                    }
+                    print("📦 Creating ModelContainer...")
+                    let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+                    
+                    print("✅ ModelContainer created successfully, switching to main thread...")
+                    DispatchQueue.main.async {
+                        self.sendLoadingMessage("Finalizing setup...")
+                        print("🎯 On main thread - initializing ProjectManager...")
+                        // Initialize ProjectManager on main thread to access mainContext
+                        let projectManager = ProjectManager(modelContext: container.mainContext)
+                        ProjectManager.shared = projectManager
+                        self.modelContainer = container
+                        
+                        // Small delay before showing main app
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            self.isLoading = false
+                            print("🎉 Initialization complete! App should show ContentView now.")
+                            
+                            // Preload data after UI is shown to improve perceived performance
+                            ProjectManager.shared.preloadData()
+                        }
+                    }
+                    
+                } catch {
+                    print("❌ ModelContainer initialization failed: \(error)")
+                    DispatchQueue.main.async {
+                        self.initializationError = "Could not initialize database: \(error.localizedDescription)"
+                        self.isLoading = false
+                    }
                 }
             }
         }
+    }
+    
+    private func sendLoadingMessage(_ message: String) {
+        NotificationCenter.default.post(name: .initializationMessage, object: message)
     }
 }

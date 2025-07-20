@@ -25,18 +25,25 @@ class ProjectManager {
     
     // Pre-warm any expensive operations
     func preloadData() {
-        initializationQueue.async { [weak self] in
-            guard let self = self else { return }
-            
-            // Pre-load project count to warm up SwiftData
-            do {
-                var fetchDescriptor = FetchDescriptor<Project>()
-                fetchDescriptor.fetchLimit = 1
-                let _ = try self.modelContext.fetch(fetchDescriptor)
-                print("✅ ProjectManager data preloaded")
-            } catch {
-                print("⚠️ Failed to preload ProjectManager data: \(error)")
+        // Ensure we're on the main thread for ModelContext operations
+        if Thread.isMainThread {
+            performPreload()
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.performPreload()
             }
+        }
+    }
+    
+    private func performPreload() {
+        // Pre-load project count to warm up SwiftData
+        do {
+            var fetchDescriptor = FetchDescriptor<Project>()
+            fetchDescriptor.fetchLimit = 1
+            let _ = try self.modelContext.fetch(fetchDescriptor)
+            print("✅ ProjectManager data preloaded")
+        } catch {
+            print("⚠️ Failed to preload ProjectManager data: \(error)")
         }
     }
     

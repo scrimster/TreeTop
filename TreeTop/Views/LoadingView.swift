@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct LoadingView: View {
-    @State private var loadingText = "Initializing TreeTop App..."
+    @State private var currentMessage = "Initializing TreeTop App..."
     @State private var dots = ""
+    @State private var timer: Timer?
     
     var body: some View {
         ZStack {
@@ -10,12 +11,10 @@ struct LoadingView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 30) {
-                // App icon or logo area
+                // Simplified app icon
                 Image(systemName: "tree")
                     .font(.system(size: 60))
                     .foregroundColor(.green)
-                    .scaleEffect(1.0 + sin(Date().timeIntervalSinceReferenceDate * 2) * 0.1)
-                    .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: Date().timeIntervalSinceReferenceDate)
                 
                 VStack(spacing: 16) {
                     Text("TreeTop")
@@ -27,25 +26,41 @@ struct LoadingView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .green))
                         .scaleEffect(1.2)
 
-                    Text(loadingText + dots)
+                    Text(currentMessage + dots)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                        .frame(minHeight: 40)
                 }
             }
         }
         .onAppear {
+            print("🔄 LoadingView appeared")
             startLoadingAnimation()
+        }
+        .onDisappear {
+            timer?.invalidate()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .initializationMessage)) { notification in
+            if let message = notification.object as? String {
+                currentMessage = message
+            }
         }
     }
     
     private func startLoadingAnimation() {
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
             withAnimation(.easeInOut(duration: 0.3)) {
                 dots = dots.count >= 3 ? "" : dots + "."
             }
         }
     }
+}
+
+// Extension to handle initialization messages
+extension Notification.Name {
+    static let initializationMessage = Notification.Name("initializationMessage")
 }
 
 #Preview {
