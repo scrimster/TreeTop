@@ -35,7 +35,7 @@ struct LiveCameraView: View {
                         Button(action: {
                             isPreviewingPhoto = false
                         }) {
-                            Text("Continue Capturing")
+                            Text("Save")
                                 .font(.title2)
                                 .padding()
                                 .background(Color.green)
@@ -59,20 +59,84 @@ struct LiveCameraView: View {
                 }
             } //live camera UI
             else if cameraManager.isSessionRunning {
-                CameraPreview(session: cameraManager.captureSession)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                
-                Button(action: {
-                    cameraManager.capturePhoto()
-                }) {
-                    Text("Take Photo")
-                        .font(.title2)
-                        .padding()
-                        .background(Color.white)
-                        .foregroundColor(.black)
-                        .clipShape(Capsule())
+                ZStack {
+                    CameraPreview(session: cameraManager.captureSession)
+                        .ignoresSafeArea()
+                    
+                    // Overlay with bubble level and compass (only when auto-capture enabled)
+                    CameraOverlayView(cameraManager: cameraManager)
+                        .allowsHitTesting(false)
+                    
+                    // UI Controls
+                    VStack {
+                        // Auto-capture toggle button (top)
+                        HStack {
+                            Button(action: {
+                                cameraManager.toggleAutoCapture()
+                            }) {
+                                HStack {
+                                    Image(systemName: cameraManager.autoCaptureEnabled ? "viewfinder.circle.fill" : "viewfinder.circle")
+                                    Text(cameraManager.autoCaptureEnabled ? "Auto" : "Manual")
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(cameraManager.autoCaptureEnabled ? Color.green.opacity(0.8) : Color.black.opacity(0.6))
+                                .cornerRadius(20)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 20)
+                        
+                        Spacer()
+                        
+                        // Manual capture button (bottom center) - only show when not in auto mode
+                        if !cameraManager.autoCaptureEnabled && !cameraManager.isAutoCapturing {
+                            Button(action: {
+                                cameraManager.capturePhoto()
+                            }) {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 70, height: 70)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.black, lineWidth: 2)
+                                            .frame(width: 60, height: 60)
+                                    )
+                            }
+                            .padding(.bottom, 50)
+                        } else {
+                            // Spacer to maintain layout when button is hidden
+                            Rectangle()
+                                .fill(Color.clear)
+                                .frame(height: 120)
+                        }
+                    }
                 }
+                
+                // Ready button - always show when in auto mode
+                if cameraManager.autoCaptureEnabled {
+                    Button(action: {
+                        cameraManager.toggleReady()
+                    }) {
+                        HStack {
+                            Image(systemName: cameraManager.isReady ? "checkmark.circle.fill" : "hand.tap.fill")
+                            Text(cameraManager.isReady ? "Ready - Tap to Pause" : "Tap to Ready")
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(cameraManager.isReady ? Color.green.opacity(0.9) : Color.orange.opacity(0.9))
+                        .cornerRadius(30)
+                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .scaleEffect(cameraManager.isReady ? 1.0 : 1.05)
+                        .animation(.easeInOut(duration: 0.2), value: cameraManager.isReady)
+                    }
+                    .padding(.top, 8)
+                }
+                
                 //save & thumbnail gallery
                 if !capturedImages.isEmpty {
                     Button(action: {
@@ -130,7 +194,13 @@ struct LiveCameraView: View {
                 }
         }
         .onAppear {
-            cameraManager.initializeCamera()
+            // Start initialization immediately when view appears
+            if !cameraManager.isSessionRunning {
+                cameraManager.initializeCamera()
+            }
+        }
+        .onDisappear {
+            cameraManager.stopSession()
         }
         .onChange(of: cameraManager.capturedImage) {
             capturedImages.append(contentsOf: cameraManager.capturedImage)
@@ -166,11 +236,8 @@ struct LiveCameraView: View {
                         print("saved: \(fileURL.lastPathComponent)")
                     }
                     
-                    showSaveConfirmation = true
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        dismiss()
-                    }
+                    // Immediately return to project page
+                    dismiss()
                 } catch {
                     print("failed to save images: \(error)")
                 }
