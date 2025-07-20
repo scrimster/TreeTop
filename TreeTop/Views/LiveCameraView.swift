@@ -122,14 +122,17 @@ struct LiveCameraView: View {
                         cameraManager.toggleReady()
                     }) {
                         HStack {
-                            Image(systemName: cameraManager.isReady ? "checkmark.circle.fill" : "pause.circle.fill")
-                            Text(cameraManager.isReady ? "Ready" : "Not Ready")
+                            Image(systemName: cameraManager.isReady ? "checkmark.circle.fill" : "hand.tap.fill")
+                            Text(cameraManager.isReady ? "Ready - Tap to Pause" : "Tap to Ready")
                         }
                         .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(cameraManager.isReady ? Color.green.opacity(0.8) : Color.orange.opacity(0.8))
-                        .cornerRadius(25)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(cameraManager.isReady ? Color.green.opacity(0.9) : Color.orange.opacity(0.9))
+                        .cornerRadius(30)
+                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .scaleEffect(cameraManager.isReady ? 1.0 : 1.05)
+                        .animation(.easeInOut(duration: 0.2), value: cameraManager.isReady)
                     }
                     .padding(.top, 8)
                 }
