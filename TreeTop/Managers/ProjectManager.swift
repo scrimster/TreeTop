@@ -9,8 +9,6 @@ import Foundation
 import SwiftData
 import UIKit
 
-// I think we need to modify project manager to make it look more like how stephanie's location manager, where the newproject view just like how she has welcomeView and uses an env obj and creates an instance of the manager
-
 class ProjectManager {
     static var shared: ProjectManager! //allows the instance to access the ProjectManage from anywhere
     
@@ -25,13 +23,21 @@ class ProjectManager {
     
     //this creates a unique folder name using the project name the user inputs and creates a new UUID
     func createProject(name: String, date: Date) -> Project? {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedName.isEmpty else {
+            print("Project name is empty or only whitespace.")
+            return nil
+        }
+        
+        let normalizedName = trimmedName.lowercased()
+        
         let fetchDescriptor = FetchDescriptor<Project>()
         
         do {
             let existingProjects = try modelContext.fetch(fetchDescriptor)
             let nameExists = existingProjects.contains {
-                $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedName
+                $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
             }
             
             if nameExists {
@@ -44,7 +50,7 @@ class ProjectManager {
             
         }
         
-        let folderName = "\(name) - \(UUID().uuidString)"
+        let folderName = "\(trimmedName) - \(UUID().uuidString)"
         let newProject = Project(name: name, date: date, folderName: folderName) //intializes the instance
         
         let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
@@ -53,24 +59,13 @@ class ProjectManager {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
             let diagonalNames = ["Diagonal 1", "Diagonal 2"]
             for name in diagonalNames {
-                if let projectFolder = newProject.folderURL {
-                    let subfolderURL = projectFolder.appendingPathComponent(name)
-                    try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
+                let subfolderURL = folderURL.appendingPathComponent(name)
+                try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
                     
                     let photosURL = subfolderURL.appendingPathComponent("Photos")
                     let masksURL = subfolderURL.appendingPathComponent("Masks")
                     try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
-                    
-//                   let viewContentsURL = newProject.viewContentsURL(forSubfolder: name) {
-//                    try FileManager.default.createDirectory(at: subfolderURL, withIntermediateDirectories: true)
-//                    try FileManager.default.createDirectory(at: viewContentsURL, withIntermediateDirectories: true)
-//
-//                    let photosURL = viewContentsURL.appendingPathComponent("Photos")
-//                    let masksURL = viewContentsURL.appendingPathComponent("Masks")
-//                    try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
-//                    try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
-                }
             }
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
@@ -78,6 +73,20 @@ class ProjectManager {
         } catch {
             print("Failed to create folder: \(error)")
             return nil
+        }
+    }
+    
+    func delete(_ project: Project) {
+        modelContext.delete(project)
+        
+        do {
+            if let folderURL = project.folderURL {
+                if FileManager.default.fileExists(atPath: folderURL.path) {
+                    try FileManager.default.removeItem(at: folderURL)
+                }
+            }
+        } catch {
+            print("Failed to delete folder: \(error.localizedDescription)")
         }
     }
     
