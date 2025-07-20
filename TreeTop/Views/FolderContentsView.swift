@@ -21,6 +21,13 @@ struct FolderContentsView: View {
     @State var showTakePhotoOptions = false
     @State var selectedDiagonal: String? = nil
     
+    // AI analysis state management
+    @State private var isGeneratingSummary = false
+    @State private var summaryProgress: (current: Int, total: Int) = (0, 0)
+    @State private var summaryProgressMessage = ""
+    @State private var showSummaryError = false
+    @State private var summaryErrorMessage = ""
+    
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
         return lastComponent == "Diagonal 1" || lastComponent == "Diagonal 2"
@@ -51,19 +58,86 @@ struct FolderContentsView: View {
             if isProjectFolder {
                 VStack(spacing: 12) {
                     Button(action: {
-                        if let url = folderURL {
-                            summaryResult = SummaryGenerator.createSummary(forProjectAt: url)
-                            showSummary = true
-                        }
+                        guard let url = folderURL, !isGeneratingSummary else { return }
+                        
+                        isGeneratingSummary = true
+                        summaryProgress = (0, 0)
+                        summaryProgressMessage = "Initializing..."
+                        
+                        SummaryGenerator.createSummaryAsync(
+                            forProjectAt: url,
+                            progressCallback: { message, current, total in
+                                summaryProgressMessage = message
+                                summaryProgress = (current, total)
+                            },
+                            completion: { result in
+                                isGeneratingSummary = false
+                                
+                                switch result {
+                                case .success(let summary):
+                                    summaryResult = summary
+                                    showSummary = true
+                                    print("✅ Summary generation completed successfully")
+                                    
+                                case .failure(let error):
+                                    summaryErrorMessage = error.localizedDescription
+                                    showSummaryError = true
+                                    print("❌ Summary generation failed: \(error)")
+                                }
+                            }
+                        )
                     }) {
-                        Label("Create Summary", systemImage: "chart.bar")
-                            .font(.headline)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue.opacity(0.8))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .padding(.horizontal)
+                        HStack {
+                            if isGeneratingSummary {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                                Text("Analyzing...")
+                            } else {
+                                Label("Create Summary", systemImage: "chart.bar")
+                            }
+                        }
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(isGeneratingSummary ? Color.gray : Color.blue.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
+                    .disabled(isGeneratingSummary)
+                    
+                    // Progress indicator for AI analysis
+                    if isGeneratingSummary {
+                        VStack(spacing: 8) {
+                            ProgressView(value: Double(summaryProgress.current), total: Double(max(1, summaryProgress.total)))
+                                .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                                .padding(.horizontal)
+                            
+                            Text(summaryProgressMessage)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                            
+                            if summaryProgress.total > 0 {
+                                Text("\(summaryProgress.current) / \(summaryProgress.total) images processed")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Button("Cancel Analysis") {
+                                isGeneratingSummary = false
+                                SummaryGenerator.cancelSummaryGeneration()
+                            }
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.top, 4)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
                     }
                     
                     Button(action: {
@@ -202,6 +276,11 @@ struct FolderContentsView: View {
                         .padding()
                     }
                 }
+            }
+            .alert("Summary Generation Failed", isPresented: $showSummaryError) {
+                Button("OK") { }
+            } message: {
+                Text(summaryErrorMessage)
             }
         }
 
