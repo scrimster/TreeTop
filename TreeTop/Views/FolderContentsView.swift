@@ -353,7 +353,18 @@ struct FolderContentsView: View {
             guard let folderURL = folderURL else{return}
             do {
                 let fileNames = try FileManager.default.contentsOfDirectory(atPath: folderURL.path)
-                self.files = fileNames
+                
+                // Sort files to ensure proper order (Diagonal 1 before Diagonal 2, etc.)
+                self.files = fileNames.sorted { (file1, file2) in
+                    // Special handling for diagonal folders to ensure correct order
+                    if file1 == "Diagonal 1" && file2 == "Diagonal 2" {
+                        return true  // Diagonal 1 comes before Diagonal 2
+                    } else if file1 == "Diagonal 2" && file2 == "Diagonal 1" {
+                        return false // Diagonal 2 comes after Diagonal 1
+                    }
+                    // For all other files, use natural string comparison
+                    return file1.localizedStandardCompare(file2) == .orderedAscending
+                }
                 
                 if isImageFolder {
                     self.imagesInViewContents = fileNames
