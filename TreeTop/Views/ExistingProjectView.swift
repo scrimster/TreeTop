@@ -17,6 +17,7 @@ struct ExistingProjectView: View {
     @State private var projectToRename: Project?
     @State private var newProjectName = ""
     @State private var showRenameDialog = false
+    @State private var showRenameDuplicateAlert = false
     
     var body: some View {
         ZStack {
@@ -70,7 +71,7 @@ struct ExistingProjectView: View {
                                     }
                                 )
                             } else {
-                                NavigationLink(destination: FolderContentsView(folderURL: project.folderURL)) {
+                                NavigationLink(destination: FolderContentsView(folderURL: project.folderURL, project: project)) {
                                     ProjectCard(project: project)
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -143,6 +144,11 @@ struct ExistingProjectView: View {
         } message: {
             Text("Enter a new name for the project")
         }
+        .alert("Project Name Already Exists", isPresented: $showRenameDuplicateAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("A project with this name already exists. Please choose a different name.")
+        }
     }
         
     func loadProjects() async {
@@ -194,6 +200,24 @@ struct ExistingProjectView: View {
     func renameProject(_ project: Project, to newName: String) {
         let trimmedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
+        
+        // Check if the name is the same (case-insensitive)
+        if project.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedName.lowercased() {
+            // Same name, no need to rename
+            return
+        }
+        
+        // Check for duplicate names (excluding the current project)
+        let trimmedLowerName = trimmedName.lowercased()
+        let nameExists = projects.contains { existingProject in
+            existingProject.id != project.id && 
+            existingProject.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedLowerName
+        }
+        
+        if nameExists {
+            showRenameDuplicateAlert = true
+            return
+        }
         
         project.name = trimmedName
         

@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct FolderContentsView: View {
     let folderURL: URL?
+    let project: Project? // Optional project for getting the real name
     @State var files: [String] = []
     @State var showCamera = false
     @State var isVieweContentsFolder = false
@@ -53,9 +55,14 @@ struct FolderContentsView: View {
     }
     
     var projectName: String {
+        // If we have a project object and we're in the main project folder, use the real name
+        if let project = project, isProjectFolder {
+            return project.name
+        }
+        
         guard let folderURL = folderURL else { return "Project Contents" }
         
-        // If we're in a subfolder, get the parent folder name
+        // For subfolders, still extract from folder path
         if isDiagonalFolder || isViewContents || isImageFolder {
             let parentURL = folderURL.deletingLastPathComponent()
             let parentName = parentURL.lastPathComponent
@@ -388,8 +395,7 @@ struct DiagonalContentsView: View {
         LiquidGlassCard(cornerRadius: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 NavigationLink(
-                    destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos")
-                                                   )
+                    destination: FolderContentsView(folderURL: baseURL.appendingPathComponent(folderName).appendingPathComponent("Photos"), project: nil)
                 ) {
                     HStack {
                         Image(systemName: "photo.on.rectangle")
@@ -416,7 +422,7 @@ struct DiagonalContentsView: View {
                     destination: FolderContentsView(
                         folderURL: baseURL
                             .appendingPathComponent(folderName)
-                            .appendingPathComponent("Masks"))
+                            .appendingPathComponent("Masks"), project: nil)
                 ) {
                     HStack {
                         Image(systemName: "rectangle.on.rectangle")
@@ -450,5 +456,5 @@ struct DiagonalContentsView: View {
 }
 
 #Preview {
-    FolderContentsView(folderURL: nil)
+    FolderContentsView(folderURL: nil, project: nil)
 }
