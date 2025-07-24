@@ -77,7 +77,16 @@ class ProjectManager {
         }
         
         let folderName = "\(trimmedName) - \(UUID().uuidString)"
-        let newProject = Project(name: name, date: date, folderName: folderName) //intializes the instance
+        let newProject = Project(
+            name: name,
+            date: date,
+            folderName: folderName,
+            location: nil,
+            latitude: 0.0,
+            longitude: 0.0,
+            elevation: 0.0,
+            weatherSummary: ""
+        ) //intializes the instance
         
         let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
         

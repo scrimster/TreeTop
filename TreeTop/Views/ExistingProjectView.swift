@@ -18,7 +18,7 @@ struct ExistingProjectView: View {
     @State private var newProjectName = ""
     @State private var showRenameDialog = false
     @State private var showRenameDuplicateAlert = false
-  
+    
     var body: some View {
         ZStack {
             // Breathing animated background
@@ -131,20 +131,6 @@ struct ExistingProjectView: View {
             Button("Cancel", role: .cancel) {
                 projectToDelete = nil
             }
-        },
-        message: {Text("This will permanently remove the project and all its folders.")
-        })
-    }
-
-    func loadProjects() async {
-        let fetchDescriptor = FetchDescriptor<Project>()
-        do{
-            if let context = ProjectManager.shared?.modelContext {
-                let fetched = try context.fetch(fetchDescriptor)
-                self.projects = fetched
-            }
-        } catch {
-            print("failed to fetch projects: \(error)")
         }
         .alert("Rename Project", isPresented: $showRenameDialog) {
             TextField("Project Name", text: $newProjectName)
@@ -167,7 +153,7 @@ struct ExistingProjectView: View {
             Text("A project with this name already exists. Please choose a different name.")
         }
     }
-        
+
     func loadProjects() async {
         let fetchDescriptor = FetchDescriptor<Project>()
         do{
@@ -227,7 +213,7 @@ struct ExistingProjectView: View {
         // Check for duplicate names (excluding the current project)
         let trimmedLowerName = trimmedName.lowercased()
         let nameExists = projects.contains { existingProject in
-            existingProject.id != project.id && 
+            existingProject.id != project.id &&
             existingProject.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedLowerName
         }
         
