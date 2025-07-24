@@ -4,13 +4,14 @@ struct NewProjectView: View {
     @Binding var path: [MainMenuDestination] //receives navigation path
     @State var projectName: String = ""
     @State var showDuplicateAlert = false
+    @StateObject private var locationManager = LocationManager()
     
     var body: some View {
         ZStack {
             // Breathing animated background
             AnimatedForestBackground()
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 40) {
                 Spacer()
                 
