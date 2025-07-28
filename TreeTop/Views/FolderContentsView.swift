@@ -110,6 +110,12 @@ struct FolderContentsView: View {
                             Button(action: {
                                 guard let url = folderURL, !isGeneratingSummary else { return }
                                 
+                                // Check if project has any photos before starting analysis using existing property
+                                if let project = project, project.needsPhotos {
+                                    print("⚠️ Analysis cancelled: No photos found in project")
+                                    return
+                                }
+                                
                                 isGeneratingSummary = true
                                 summaryProgress = (current: 0, total: 0)
                                 summaryProgressMessage = "Initializing..."
@@ -170,12 +176,15 @@ struct FolderContentsView: View {
                                 }
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(isGeneratingSummary ? Color.gray : Color.blue.opacity(0.8))
+                                .background(
+                                    isGeneratingSummary ? Color.gray : 
+                                    (project?.needsPhotos == true ? Color.gray.opacity(0.5) : Color.blue.opacity(0.8))
+                                )
                                 .glassText()
                                 .cornerRadius(12)
                                 .padding(.horizontal)
                             }
-                            .disabled(isGeneratingSummary)
+                            .disabled(isGeneratingSummary || project?.needsPhotos == true)
                             
                             // Progress indicator for AI analysis
                             if isGeneratingSummary {
@@ -491,8 +500,4 @@ struct DiagonalContentsView: View {
             LiveCameraView(saveToURL: saveURL)
         }
     }
-}
-
-#Preview {
-    FolderContentsView(folderURL: nil, project: nil)
 }

@@ -22,25 +22,23 @@ struct LiquidGlassStyle: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .background(.ultraThinMaterial.opacity(0.25), in: RoundedRectangle(cornerRadius: cornerRadius))
+            .background(.ultraThinMaterial.opacity(0.2), in: RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                .white.opacity(strokeOpacity * 1.5),
-                                .white.opacity(strokeOpacity * 0.8),
-                                .white.opacity(strokeOpacity * 0.2),
-                                .white.opacity(strokeOpacity * 0.4)
+                                .white.opacity(strokeOpacity * 1.0),
+                                .white.opacity(strokeOpacity * 0.3)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1.5
+                        lineWidth: 1.0
                     )
             )
-            .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 2)
-            .shadow(color: .white.opacity(0.02), radius: 1, x: 0, y: -1)
+            .shadow(color: .black.opacity(0.02), radius: shadowRadius * 0.5, x: 0, y: 2)
+            .shadow(color: .white.opacity(0.01), radius: 1, x: 0, y: -1)
     }
 }
 
@@ -55,25 +53,23 @@ struct LiquidGlassCircleStyle: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .background(.ultraThinMaterial.opacity(0.3), in: Circle())
+            .background(.ultraThinMaterial.opacity(0.2), in: Circle())
             .overlay(
                 Circle()
                     .stroke(
                         LinearGradient(
                             colors: [
-                                .white.opacity(strokeOpacity * 1.5),
-                                .white.opacity(strokeOpacity * 0.9),
-                                .white.opacity(strokeOpacity * 0.3),
-                                .white.opacity(strokeOpacity * 0.6)
+                                .white.opacity(strokeOpacity * 1.0),
+                                .white.opacity(strokeOpacity * 0.3)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1.5
+                        lineWidth: 1.0
                     )
             )
-            .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 2)
-            .shadow(color: .white.opacity(0.02), radius: 1, x: 0, y: -1)
+            .shadow(color: .black.opacity(0.02), radius: shadowRadius * 0.5, x: 0, y: 2)
+            .shadow(color: .white.opacity(0.01), radius: 1, x: 0, y: -1)
     }
 }
 
@@ -99,6 +95,14 @@ extension View {
             .foregroundColor(.white.opacity(opacity))
             .shadow(color: .white.opacity(0.01), radius: 1, x: 0, y: -1)
     }
+    
+    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+        )
+    }
 }
 
 // MARK: - Liquid Glass Components
@@ -118,7 +122,7 @@ struct LiquidGlassButton<Content: View>: View {
     var body: some View {
         Button(action: action) {
             content
-                .liquidGlass(cornerRadius: cornerRadius, strokeOpacity: isPressed ? 0.4 : 0.25)
+                .modifier(LiquidGlassStyle(cornerRadius: cornerRadius, strokeOpacity: isPressed ? 0.4 : 0.25))
         }
         .buttonStyle(PlainButtonStyle())
         .scaleEffect(isPressed ? 0.96 : 1.0)
@@ -141,7 +145,7 @@ struct LiquidGlassCard<Content: View>: View {
     
     var body: some View {
         content
-            .liquidGlass(cornerRadius: cornerRadius, strokeOpacity: 0.2, shadowRadius: 12)
+            .modifier(LiquidGlassStyle(cornerRadius: cornerRadius, strokeOpacity: 0.2, shadowRadius: 12))
     }
 }
 
@@ -158,22 +162,10 @@ struct LiquidGlassFolder<Content: View>: View {
     
     var body: some View {
         content
-            .liquidGlass(
+            .modifier(LiquidGlassStyle(
                 cornerRadius: cornerRadius, 
                 strokeOpacity: isExpanded ? 0.35 : 0.25,
                 shadowRadius: isExpanded ? 10 : 6
-            )
-    }
-}
-
-// MARK: - Press Events Extension
-
-extension View {
-    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
-        self.simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in onPress() }
-                .onEnded { _ in onRelease() }
-        )
+            ))
     }
 }
