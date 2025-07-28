@@ -11,6 +11,8 @@ import SwiftData
 struct ExistingProjectView: View {
     @Environment(\.modelContext) var modelContext
     @State var projects: [Project] = []
+    @State var filteredProjects: [Project] = []
+    @State var searchText: String = ""
     @State private var projectToDelete: Project?
     @State private var showDeleteConfirmation = false
     @State private var isEditMode = false
@@ -26,7 +28,7 @@ struct ExistingProjectView: View {
                 .ignoresSafeArea()
             
             if projects.isEmpty {
-                // Empty state
+                // Empty state when no projects exist at all
                 VStack(spacing: 24) {
                     Image(systemName: "folder.badge.plus")
                         .font(.system(size: 60))
@@ -54,41 +56,131 @@ struct ExistingProjectView: View {
                     }
                 }
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(projects, id: \.id) { project in
-                            if isEditMode {
-                                EditableProjectCard(
-                                    project: project,
-                                    onDelete: {
-                                        projectToDelete = project
-                                        showDeleteConfirmation = true
-                                    },
-                                    onRename: {
-                                        projectToRename = project
-                                        newProjectName = project.name
-                                        showRenameDialog = true
+                // Main content with search bar and projects
+                VStack(spacing: 0) {
+                    // Search bar (always visible when projects exist, hidden in edit mode)
+                    if !isEditMode {
+                        HStack {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .font(.system(size: 16))
+                                
+                                TextField("Search projects...", text: $searchText)
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .placeholder(when: searchText.isEmpty) {
+                                        Text("Search projects...")
+                                            .foregroundColor(.white.opacity(0.5))
+                                            .font(.system(.body, design: .rounded))
                                     }
-                                )
-                            } else {
-                                NavigationLink(destination: FolderContentsView(folderURL: project.folderURL, project: project)) {
-                                    ProjectCard(project: project)
+                                
+                                if !searchText.isEmpty {
+                                    Button(action: {
+                                        searchText = ""
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .font(.system(size: 16))
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.1))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 16)
+                    }
+                    
+                    // Content area
+                    if filteredProjects.isEmpty && !searchText.isEmpty {
+                        // Search results empty state
+                        Spacer()
+                        VStack(spacing: 24) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 60))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.6),
+                                            Color.white.opacity(0.4)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            
+                            VStack(spacing: 8) {
+                                Text("No Projects Found")
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                
+                                Text("No projects match '\(searchText)'")
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
                             }
                         }
+                        Spacer()
+                    } else {
+                        // Projects list
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredProjects, id: \.id) { project in
+                                    if isEditMode {
+                                        EditableProjectCard(
+                                            project: project,
+                                            onDelete: {
+                                                projectToDelete = project
+                                                showDeleteConfirmation = true
+                                            },
+                                            onRename: {
+                                                projectToRename = project
+                                                newProjectName = project.name
+                                                showRenameDialog = true
+                                            }
+                                        )
+                                    } else {
+                                        NavigationLink(destination: FolderContentsView(folderURL: project.folderURL, project: project)) {
+                                            ProjectCard(project: project)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
                     }
-                    .padding()
                 }
             }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: searchText) { _, _ in
+            updateFilteredProjects()
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("Your Projects")
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
-                    .foregroundColor(.white)
+                VStack(spacing: 2) {
+                    Text("Your Projects")
+                        .font(.system(.headline, design: .rounded, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    if !searchText.isEmpty && !projects.isEmpty {
+                        Text("\(filteredProjects.count) of \(projects.count)")
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -96,6 +188,10 @@ struct ExistingProjectView: View {
                     Button(isEditMode ? "Done" : "Edit") {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isEditMode.toggle()
+                            // Clear search when entering edit mode
+                            if isEditMode {
+                                searchText = ""
+                            }
                         }
                     }
                     .foregroundColor(.white)
@@ -159,13 +255,28 @@ struct ExistingProjectView: View {
         do{
             if let context = ProjectManager.shared?.modelContext {
                 let fetched = try context.fetch(fetchDescriptor)
-                self.projects = fetched
+                // Sort projects alphabetically by name
+                self.projects = fetched.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                
+                // Update filtered projects
+                updateFilteredProjects()
                 
                 // Refresh statistics for all projects
                 refreshAllProjectStatistics()
             }
         } catch {
             print("failed to fetch projects: \(error)")
+        }
+    }
+    
+    private func updateFilteredProjects() {
+        if searchText.isEmpty {
+            filteredProjects = projects
+        } else {
+            filteredProjects = projects.filter { project in
+                project.name.localizedCaseInsensitiveCompare(searchText) == .orderedSame ||
+                project.name.localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
     
@@ -465,6 +576,19 @@ struct DiagonalProgress: View {
             Text("D\(number): \(count)")
                 .font(.system(.caption2, design: .rounded, weight: .medium))
                 .glassTextSecondary(opacity: 0.7)
+        }
+    }
+}
+
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content) -> some View {
+        
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
         }
     }
 }

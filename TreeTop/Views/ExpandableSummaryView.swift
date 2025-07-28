@@ -92,17 +92,8 @@ struct ExpandableSummaryView: View {
                             }
                         } else {
                             Text("Pending")
-                                .font(.system(.title2, design: .rounded, weight: .bold))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.orange,
-                                            Color.yellow
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
+                                .font(.system(.title2, design: .default, weight: .semibold))
+                                .foregroundColor(.orange)
                         }
                         
                         Button(action: {
@@ -243,7 +234,7 @@ struct ExpandableSummaryView: View {
                                                 .font(.system(.caption, design: .rounded))
                                                 .glassTextSecondary(opacity: 0.8)
                                             
-                                            Text("• Use the camera buttons above to start photo capture")
+                                            Text("• Use the Take Photo button to start photo capture")
                                                 .font(.system(.caption, design: .rounded))
                                                 .glassTextSecondary(opacity: 0.8)
                                         } else if project.hasMissingDiagonal {
