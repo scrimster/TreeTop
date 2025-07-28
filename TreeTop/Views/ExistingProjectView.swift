@@ -160,9 +160,18 @@ struct ExistingProjectView: View {
             if let context = ProjectManager.shared?.modelContext {
                 let fetched = try context.fetch(fetchDescriptor)
                 self.projects = fetched
+                
+                // Refresh statistics for all projects
+                refreshAllProjectStatistics()
             }
         } catch {
             print("failed to fetch projects: \(error)")
+        }
+    }
+    
+    private func refreshAllProjectStatistics() {
+        for project in projects {
+            ProjectManager.shared?.refreshProjectStatistics(project)
         }
     }
     
@@ -243,40 +252,118 @@ struct ProjectCard: View {
     
     var body: some View {
         LiquidGlassCard(cornerRadius: 18) {
-            HStack(spacing: 16) {
-                // Project icon
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.4, green: 0.8, blue: 0.6),
-                                Color(red: 0.3, green: 0.7, blue: 0.4)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(project.name)
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
-                        .glassText()
-                        .lineLimit(2)
+            VStack(alignment: .leading, spacing: 16) {
+                // Header with project name, date, and status
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(project.name)
+                            .font(.system(.title2, design: .rounded, weight: .semibold))
+                            .glassText()
+                            .lineLimit(2)
+                        
+                        Text(project.date.formatted(date: .abbreviated, time: .shortened))
+                            .font(.system(.caption, design: .rounded))
+                            .glassTextSecondary(opacity: 0.7)
+                    }
                     
-                    Text(project.date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.system(.caption, design: .rounded))
-                        .glassTextSecondary()
+                    Spacer()
+                    
+                    VStack(spacing: 4) {
+                        // Out of date indicator
+                        if project.isAnalysisOutOfDate && project.canopyCoverPercentage != nil {
+                            VStack(spacing: 2) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.orange)
+                                
+                                Text("Needs Rebake")
+                                    .font(.system(.caption2, design: .rounded, weight: .medium))
+                                    .glassTextSecondary(opacity: 0.8)
+                            }
+                        }
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .glassTextSecondary(opacity: 0.5)
+                    }
                 }
                 
-                Spacer()
+                // Statistics Section
+                if let canopyPercentage = project.canopyCoverPercentage {
+                    HStack(spacing: 20) {
+                        // Canopy Cover
+                        StatisticItem(
+                            icon: "leaf.fill",
+                            title: "Canopy Cover",
+                            value: "\(Int(canopyPercentage))%",
+                            color: .green
+                        )
+                        
+                        // Photo Count
+                        StatisticItem(
+                            icon: "camera.fill",
+                            title: "Photos",
+                            value: "\(project.totalPhotos)",
+                            color: .blue
+                        )
+                        
+                        // Last Analysis
+                        if let analysisDate = project.lastAnalysisDate {
+                            StatisticItem(
+                                icon: "clock.fill",
+                                title: "Analyzed",
+                                value: formatRelativeDate(analysisDate),
+                                color: .purple
+                            )
+                        }
+                    }
+                } else {
+                    // No analysis yet
+                    HStack {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 14))
+                            .glassTextSecondary(opacity: 0.6)
+                        
+                        Text("No analysis available")
+                            .font(.system(.subheadline, design: .rounded))
+                            .glassTextSecondary(opacity: 0.6)
+                        
+                        Spacer()
+                        
+                        // Show photo counts even without analysis
+                        if project.totalPhotos > 0 {
+                            Text("\(project.totalPhotos) photos")
+                                .font(.system(.caption, design: .rounded))
+                                .glassTextSecondary(opacity: 0.7)
+                        }
+                    }
+                }
                 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .glassTextSecondary(opacity: 0.5)
+                // Progress indicators for diagonals
+                if project.diagonal1Photos > 0 || project.diagonal2Photos > 0 {
+                    HStack(spacing: 12) {
+                        DiagonalProgress(
+                            number: 1,
+                            count: project.diagonal1Photos
+                        )
+                        
+                        DiagonalProgress(
+                            number: 2,
+                            count: project.diagonal2Photos
+                        )
+                        
+                        Spacer()
+                    }
+                }
             }
-            .padding(16)
+            .padding(20)
         }
+    }
+    
+    private func formatRelativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
 
@@ -337,6 +424,47 @@ struct EditableProjectCard: View {
                 }
             }
             .padding(16)
+        }
+    }
+}
+
+struct StatisticItem: View {
+    let icon: String
+    let title: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.system(.headline, design: .rounded, weight: .bold))
+                .glassText()
+            
+            Text(title)
+                .font(.system(.caption2, design: .rounded))
+                .glassTextSecondary(opacity: 0.7)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct DiagonalProgress: View {
+    let number: Int
+    let count: Int
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "camera.viewfinder")
+                .font(.system(size: 12))
+                .glassTextSecondary(opacity: 0.7)
+            
+            Text("D\(number): \(count)")
+                .font(.system(.caption2, design: .rounded, weight: .medium))
+                .glassTextSecondary(opacity: 0.7)
         }
     }
 }

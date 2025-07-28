@@ -21,6 +21,22 @@ class Project {
     var weatherSummary: String = ""
     var location: LocationModel?
     var imagePaths: [String] = [] //stores the file paths as string to any images associated with the project. when the user adds a photo, we'll save it to disk and append the file path
+    
+    // Project statistics fields
+    var canopyCoverPercentage: Double?
+    var lastAnalysisDate: Date?
+    var lastPhotoModifiedDate: Date?
+    var totalPhotos: Int = 0
+    var diagonal1Photos: Int = 0
+    var diagonal2Photos: Int = 0
+    var additionalStats: [String: Double] = [:] // For future API data
+    
+    // Computed property to check if analysis is out of date
+    var isAnalysisOutOfDate: Bool {
+        guard let analysisDate = lastAnalysisDate,
+              let photoDate = lastPhotoModifiedDate else { return true }
+        return photoDate > analysisDate
+    }
 
     
     //defining an initialization to create a new project

@@ -119,8 +119,13 @@ struct FolderContentsView: View {
                                 switch result {
                                 case .success(let summary):
                                     summaryResult = summary
-                                    showSummary = true
+                                    // Don't navigate to separate view, display inline instead
                                     print("✅ Summary generation completed successfully")
+                                    
+                                    // Update project statistics with canopy coverage
+                                    if let project = project {
+                                        ProjectManager.shared?.updateProjectAnalysis(project, canopyPercentage: summary.overallAverage)
+                                    }
                                     
                                 case .failure(let error):
                                     summaryErrorMessage = error.localizedDescription

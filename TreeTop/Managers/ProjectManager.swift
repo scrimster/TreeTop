@@ -161,6 +161,10 @@ class ProjectManager {
         do {
             try imageData.write(to: fileURL)
             print("Image saved to folder: \(fileURL.path)")
+            
+            // Refresh project statistics after saving image
+            refreshProjectStatistics(project)
+            
             return true
         } catch {
             print("Error saving image: \(error)")
@@ -180,5 +184,17 @@ class ProjectManager {
             }
         }
         return images
+    }
+    
+    // MARK: - Project Statistics Methods
+    
+    func refreshProjectStatistics(_ project: Project) {
+        ProjectStatisticsManager.shared.updateProjectStatistics(project)
+        try? modelContext.save()
+    }
+    
+    func updateProjectAnalysis(_ project: Project, canopyPercentage: Double) {
+        ProjectStatisticsManager.shared.updateCanopyCoverPercentage(project, percentage: canopyPercentage)
+        try? modelContext.save()
     }
 }
