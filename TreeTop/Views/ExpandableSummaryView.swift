@@ -40,11 +40,21 @@ struct ExpandableSummaryView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         if let result = result {
                             HStack(spacing: 8) {
-                                // Show out-of-date indicator if applicable
-                                if let project = project, project.isAnalysisOutOfDate {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.orange)
-                                        .font(.system(size: 12))
+                                // Show status indicator if applicable
+                                if let project = project {
+                                    if project.needsPhotos {
+                                        Image(systemName: "camera.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.system(size: 12))
+                                    } else if project.hasMissingDiagonal {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.system(size: 12))
+                                    } else if project.isAnalysisOutOfDate {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.system(size: 12))
+                                    }
                                 }
                                 
                                 Text("\(Int(result.overallAverage))%")
@@ -61,12 +71,24 @@ struct ExpandableSummaryView: View {
                                     )
                             }
                             
-                            // Status text showing freshness
+                            // Status text showing freshness and photo status
                             if let project = project {
-                                Text(project.isAnalysisOutOfDate ? "Out of Date" : "Current")
-                                    .font(.system(.caption2, design: .rounded, weight: .medium))
-                                    .foregroundColor(project.isAnalysisOutOfDate ? .orange : .green)
-                                    .opacity(0.8)
+                                if project.needsPhotos {
+                                    Text("Need Photos")
+                                        .font(.system(.caption2, design: .rounded, weight: .medium))
+                                        .foregroundColor(.blue)
+                                        .opacity(0.8)
+                                } else if project.hasMissingDiagonal {
+                                    Text("Missing Diagonal")
+                                        .font(.system(.caption2, design: .rounded, weight: .medium))
+                                        .foregroundColor(.orange)
+                                        .opacity(0.8)
+                                } else {
+                                    Text(project.isAnalysisOutOfDate ? "Out of Date" : "Current")
+                                        .font(.system(.caption2, design: .rounded, weight: .medium))
+                                        .foregroundColor(project.isAnalysisOutOfDate ? .orange : .green)
+                                        .opacity(0.8)
+                                }
                             }
                         } else {
                             Text("Pending")
@@ -108,27 +130,69 @@ struct ExpandableSummaryView: View {
                             .background(Color.white.opacity(0.2))
                         
                         if let result = result {
-                            // Show out-of-date warning if applicable
-                            if let project = project, project.isAnalysisOutOfDate {
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundColor(.orange)
-                                            .font(.system(size: 16))
+                            // Show appropriate warning based on project state
+                            if let project = project {
+                                if project.needsPhotos {
+                                    VStack(spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "camera.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 16))
+                                            
+                                            Text("Photos Required")
+                                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                                .foregroundColor(.blue)
+                                            
+                                            Spacer()
+                                        }
                                         
-                                        Text("Analysis Out of Date")
-                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                            .foregroundColor(.orange)
-                                        
-                                        Spacer()
+                                        Text("Capture photos in both diagonal folders before running analysis.")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                            .padding(.leading, 8)
                                     }
-                                    
-                                    Text("Photos have been modified since the last analysis. Run a new analysis to get updated results.")
-                                        .font(.system(.caption, design: .rounded))
-                                        .glassTextSecondary(opacity: 0.8)
-                                        .padding(.leading, 8)
+                                    .padding(.bottom, 8)
+                                } else if project.hasMissingDiagonal {
+                                    VStack(spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundColor(.orange)
+                                                .font(.system(size: 16))
+                                            
+                                            Text("Missing \(project.missingDiagonalName ?? "Diagonal")")
+                                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                                .foregroundColor(.orange)
+                                            
+                                            Spacer()
+                                        }
+                                        
+                                        Text("Capture photos in \(project.missingDiagonalName ?? "the missing diagonal") for complete analysis results.")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                            .padding(.leading, 8)
+                                    }
+                                    .padding(.bottom, 8)
+                                } else if project.isAnalysisOutOfDate {
+                                    VStack(spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundColor(.orange)
+                                                .font(.system(size: 16))
+                                            
+                                            Text("Analysis Out of Date")
+                                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                                .foregroundColor(.orange)
+                                            
+                                            Spacer()
+                                        }
+                                        
+                                        Text("Photos have been modified since the last analysis. Run a new analysis to get updated results.")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                            .padding(.leading, 8)
+                                    }
+                                    .padding(.bottom, 8)
                                 }
-                                .padding(.bottom, 8)
                             }
                             
                             // Diagonal breakdown when data is available
@@ -151,29 +215,67 @@ struct ExpandableSummaryView: View {
                             // Information when no analysis has been run
                             VStack(spacing: 12) {
                                 HStack {
-                                    Image(systemName: "info.circle")
-                                        .foregroundColor(.blue.opacity(0.8))
-                                        .font(.system(size: 16))
-                                    
-                                    Text("Analysis Required")
-                                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                        .glassText()
+                                    if let project = project, project.needsPhotos {
+                                        Image(systemName: "camera.fill")
+                                            .foregroundColor(.blue.opacity(0.8))
+                                            .font(.system(size: 16))
+                                        
+                                        Text("Photos Required")
+                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                            .glassText()
+                                    } else {
+                                        Image(systemName: "info.circle")
+                                            .foregroundColor(.blue.opacity(0.8))
+                                            .font(.system(size: 16))
+                                        
+                                        Text("Analysis Required")
+                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                            .glassText()
+                                    }
                                     
                                     Spacer()
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("• Tap 'Run Canopy Analysis' to generate coverage data")
-                                        .font(.system(.caption, design: .rounded))
-                                        .glassTextSecondary(opacity: 0.8)
-                                    
-                                    Text("• Ensure both diagonal folders contain photos")
-                                        .font(.system(.caption, design: .rounded))
-                                        .glassTextSecondary(opacity: 0.8)
-                                    
-                                    Text("• Analysis may take several minutes to complete")
-                                        .font(.system(.caption, design: .rounded))
-                                        .glassTextSecondary(opacity: 0.8)
+                                    if let project = project {
+                                        if project.needsPhotos {
+                                            Text("• Capture photos in both Diagonal 1 and Diagonal 2 folders")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                            
+                                            Text("• Use the camera buttons above to start photo capture")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                        } else if project.hasMissingDiagonal {
+                                            Text("• Capture photos in \(project.missingDiagonalName ?? "missing diagonal") folder")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                            
+                                            Text("• Then tap 'Run Canopy Analysis' for complete results")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                        } else {
+                                            Text("• Tap 'Run Canopy Analysis' to generate coverage data")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                            
+                                            Text("• Analysis may take several minutes to complete")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary(opacity: 0.8)
+                                        }
+                                    } else {
+                                        Text("• Tap 'Run Canopy Analysis' to generate coverage data")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                        
+                                        Text("• Ensure both diagonal folders contain photos")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                        
+                                        Text("• Analysis may take several minutes to complete")
+                                            .font(.system(.caption, design: .rounded))
+                                            .glassTextSecondary(opacity: 0.8)
+                                    }
                                 }
                                 .padding(.leading, 8)
                             }

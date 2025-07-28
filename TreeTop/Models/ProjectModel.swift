@@ -42,9 +42,33 @@ class Project {
     
     // Computed property to check if analysis is out of date
     var isAnalysisOutOfDate: Bool {
+        // If no photos at all, not out of date (need photos first)
+        if totalPhotos == 0 { return false }
+        
         guard let analysisDate = lastAnalysisDate,
               let photoDate = lastPhotoModifiedDate else { return true }
         return photoDate > analysisDate
+    }
+    
+    // Computed property to check if photos are needed
+    var needsPhotos: Bool {
+        return totalPhotos == 0
+    }
+    
+    // Computed property to check if missing diagonal photos
+    var hasMissingDiagonal: Bool {
+        return (diagonal1Photos == 0 && diagonal2Photos > 0) || 
+               (diagonal2Photos == 0 && diagonal1Photos > 0)
+    }
+    
+    // Computed property to get missing diagonal name
+    var missingDiagonalName: String? {
+        if diagonal1Photos == 0 && diagonal2Photos > 0 {
+            return "Diagonal 1"
+        } else if diagonal2Photos == 0 && diagonal1Photos > 0 {
+            return "Diagonal 2"
+        }
+        return nil
     }
     
     // Computed property to get SummaryResult from stored data
