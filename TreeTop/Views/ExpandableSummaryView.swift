@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct ExpandableSummaryView: View {
-    let result: SummaryResult
+    let result: SummaryResult?
+    let project: Project?
     @State private var isExpanded: Bool = false
     let initiallyExpanded: Bool
     
-    init(result: SummaryResult, initiallyExpanded: Bool = false) {
+    init(result: SummaryResult?, project: Project? = nil, initiallyExpanded: Bool = false) {
         self.result = result
+        self.project = project
         self.initiallyExpanded = initiallyExpanded
         self._isExpanded = State(initialValue: initiallyExpanded)
     }
@@ -28,7 +30,7 @@ struct ExpandableSummaryView: View {
                             .font(.system(.headline, design: .rounded, weight: .semibold))
                             .glassText()
                         
-                        Text("Overall Canopy Cover")
+                        Text(result != nil ? "Overall Canopy Cover" : "Status")
                             .font(.system(.caption, design: .rounded))
                             .glassTextSecondary(opacity: 0.7)
                     }
@@ -36,18 +38,50 @@ struct ExpandableSummaryView: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text("\(Int(result.overallAverage))%")
-                            .font(.system(.title2, design: .rounded, weight: .bold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [
-                                        Color(red: 0.3, green: 0.8, blue: 0.5),
-                                        Color(red: 0.2, green: 0.7, blue: 0.4)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                        if let result = result {
+                            HStack(spacing: 8) {
+                                // Show out-of-date indicator if applicable
+                                if let project = project, project.isAnalysisOutOfDate {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.orange)
+                                        .font(.system(size: 12))
+                                }
+                                
+                                Text("\(Int(result.overallAverage))%")
+                                    .font(.system(.title2, design: .rounded, weight: .bold))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [
+                                                Color(red: 0.3, green: 0.8, blue: 0.5),
+                                                Color(red: 0.2, green: 0.7, blue: 0.4)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            // Status text showing freshness
+                            if let project = project {
+                                Text(project.isAnalysisOutOfDate ? "Out of Date" : "Current")
+                                    .font(.system(.caption2, design: .rounded, weight: .medium))
+                                    .foregroundColor(project.isAnalysisOutOfDate ? .orange : .green)
+                                    .opacity(0.8)
+                            }
+                        } else {
+                            Text("Pending")
+                                .font(.system(.title2, design: .rounded, weight: .bold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.orange,
+                                            Color.yellow
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
+                        }
                         
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -73,63 +107,95 @@ struct ExpandableSummaryView: View {
                         Divider()
                             .background(Color.white.opacity(0.2))
                         
-                        // Diagonal breakdown
-                        VStack(spacing: 8) {
-                            Text("Diagonal Breakdown")
-                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                                .glassText()
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        if let result = result {
+                            // Show out-of-date warning if applicable
+                            if let project = project, project.isAnalysisOutOfDate {
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.system(size: 16))
+                                        
+                                        Text("Analysis Out of Date")
+                                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                            .foregroundColor(.orange)
+                                        
+                                        Spacer()
+                                    }
+                                    
+                                    Text("Photos have been modified since the last analysis. Run a new analysis to get updated results.")
+                                        .font(.system(.caption, design: .rounded))
+                                        .glassTextSecondary(opacity: 0.8)
+                                        .padding(.leading, 8)
+                                }
+                                .padding(.bottom, 8)
+                            }
                             
-                            ForEach(result.diagonalAverages.keys.sorted(), id: \.self) { key in
-                                if let value = result.diagonalAverages[key] {
-                                    DiagonalSummaryRow(
-                                        diagonal: key,
-                                        percentage: value
-                                    )
+                            // Diagonal breakdown when data is available
+                            VStack(spacing: 8) {
+                                Text("Diagonal Breakdown")
+                                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                    .glassText()
+                                
+                                ForEach(Array(result.diagonalAverages.keys.sorted()), id: \.self) { diagonal in
+                                    if let average = result.diagonalAverages[diagonal] {
+                                        DiagonalSummaryRow(
+                                            diagonal: diagonal,
+                                            percentage: average,
+                                            showMiniProgress: true
+                                        )
+                                    }
                                 }
                             }
-                        }
-                        
-                        // Analysis timestamp
-                        if initiallyExpanded {
-                            VStack(spacing: 4) {
-                                Divider()
-                                    .background(Color.white.opacity(0.2))
-                                
+                        } else {
+                            // Information when no analysis has been run
+                            VStack(spacing: 12) {
                                 HStack {
-                                    Image(systemName: "clock.fill")
-                                        .font(.system(size: 12))
-                                        .glassTextSecondary(opacity: 0.6)
+                                    Image(systemName: "info.circle")
+                                        .foregroundColor(.blue.opacity(0.8))
+                                        .font(.system(size: 16))
                                     
-                                    Text("Analysis completed \(formatTimestamp())")
-                                        .font(.system(.caption2, design: .rounded))
-                                        .glassTextSecondary(opacity: 0.6)
+                                    Text("Analysis Required")
+                                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                                        .glassText()
                                     
                                     Spacer()
                                 }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("• Tap 'Run Canopy Analysis' to generate coverage data")
+                                        .font(.system(.caption, design: .rounded))
+                                        .glassTextSecondary(opacity: 0.8)
+                                    
+                                    Text("• Ensure both diagonal folders contain photos")
+                                        .font(.system(.caption, design: .rounded))
+                                        .glassTextSecondary(opacity: 0.8)
+                                    
+                                    Text("• Analysis may take several minutes to complete")
+                                        .font(.system(.caption, design: .rounded))
+                                        .glassTextSecondary(opacity: 0.8)
+                                }
+                                .padding(.leading, 8)
                             }
                         }
                     }
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                        removal: .opacity.combined(with: .scale(scale: 0.95))
-                    ))
                 }
             }
             .padding(20)
         }
-    }
-    
-    private func formatTimestamp() -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: Date(), relativeTo: Date())
     }
 }
 
 struct DiagonalSummaryRow: View {
     let diagonal: String
     let percentage: Double
+    let showMiniProgress: Bool
+    
+    init(diagonal: String, percentage: Double, showMiniProgress: Bool = false) {
+        self.diagonal = diagonal
+        self.percentage = percentage
+        self.showMiniProgress = showMiniProgress
+    }
     
     var body: some View {
         HStack {
@@ -148,24 +214,26 @@ struct DiagonalSummaryRow: View {
             
             // Percentage with mini progress bar
             HStack(spacing: 8) {
-                // Mini progress bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.1))
-                            .frame(height: 4)
-                            .cornerRadius(2)
-                        
-                        Rectangle()
-                            .fill(diagonalColor)
-                            .frame(
-                                width: geometry.size.width * (percentage / 100),
-                                height: 4
-                            )
-                            .cornerRadius(2)
+                if showMiniProgress {
+                    // Mini progress bar
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.1))
+                                .frame(height: 4)
+                                .cornerRadius(2)
+                            
+                            Rectangle()
+                                .fill(diagonalColor)
+                                .frame(
+                                    width: geometry.size.width * (percentage / 100),
+                                    height: 4
+                                )
+                                .cornerRadius(2)
+                        }
                     }
+                    .frame(width: 60, height: 4)
                 }
-                .frame(width: 60, height: 4)
                 
                 Text("\(Int(percentage))%")
                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
@@ -195,10 +263,7 @@ struct DiagonalSummaryRow: View {
         )
         
         ExpandableSummaryView(
-            result: SummaryResult(
-                diagonalAverages: ["Diagonal 1": 80, "Diagonal 2": 70],
-                overallAverage: 75
-            ),
+            result: nil,
             initiallyExpanded: true
         )
     }

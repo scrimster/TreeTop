@@ -11,6 +11,7 @@ import SwiftData
 struct FolderContentsView: View {
     let folderURL: URL?
     let project: Project? // Optional project for getting the real name
+    @Environment(\.modelContext) private var modelContext
     @State var files: [String] = []
     @State var showCamera = false
     @State var isVieweContentsFolder = false
@@ -127,6 +128,25 @@ struct FolderContentsView: View {
                                             switch result {
                                             case .success(let summary):
                                                 summaryResult = summary
+                                                
+                                                // Save results to project if available
+                                                if let project = project {
+                                                    // Update project with analysis results
+                                                    project.canopyCoverPercentage = summary.overallAverage
+                                                    project.lastAnalysisDate = Date()
+                                                    
+                                                    // Store diagonal results in separate properties for SwiftData compatibility
+                                                    project.diagonal1Percentage = summary.diagonalAverages["Diagonal 1"]
+                                                    project.diagonal2Percentage = summary.diagonalAverages["Diagonal 2"]
+                                                    
+                                                    // Save to persistent storage
+                                                    do {
+                                                        try modelContext.save()
+                                                    } catch {
+                                                        print("Error saving analysis results: \(error)")
+                                                    }
+                                                }
+                                                
                                             case .failure(let error):
                                                 summaryErrorMessage = error.localizedDescription
                                                 showSummaryError = true
@@ -141,11 +161,11 @@ struct FolderContentsView: View {
                                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                             .scaleEffect(0.8)
                                     } else {
-                                        Image(systemName: "wand.and.stars")
+                                        Image(systemName: "chart.bar.doc.horizontal")
                                             .font(.system(size: 18, weight: .semibold))
                                     }
                                     
-                                    Text(isGeneratingSummary ? "Generating Summary..." : "Generate AI Summary")
+                                    Text(isGeneratingSummary ? "Running Analysis..." : "Run Canopy Analysis")
                                         .font(.headline)
                                 }
                                 .padding()
@@ -190,11 +210,9 @@ struct FolderContentsView: View {
                                 .padding(.horizontal)
                             }
                             
-                            // Display expandable summary if available
-                            if let summary = summaryResult {
-                                ExpandableSummaryView(result: summary, initiallyExpanded: false)
-                                    .padding(.horizontal)
-                            }
+                            // Always display expandable summary
+                            ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
+                                .padding(.horizontal)
                             
                             Button(action: {
                                 showTakePhotoOptions = true
@@ -314,6 +332,16 @@ struct FolderContentsView: View {
         .navigationTitle(projectName)
         .onAppear {
             loadFolderContents()
+            
+            // Update project statistics to detect photo changes
+            if let project = project {
+                ProjectStatisticsManager.shared.updateProjectStatistics(project)
+            }
+            
+            // Load stored analysis results if available
+            if let project = project, let storedResult = project.storedSummaryResult {
+                summaryResult = storedResult
+            }
         }
         .navigationDestination(isPresented: $showCamera) {
             if let diagonal = selectedDiagonal,
@@ -339,7 +367,7 @@ struct FolderContentsView: View {
                 }
             }
         }
-        .alert("Summary Generation Failed", isPresented: $showSummaryError) {
+        .alert("Analysis Failed", isPresented: $showSummaryError) {
             Button("OK") { }
         } message: {
             Text(summaryErrorMessage)

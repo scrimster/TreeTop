@@ -31,11 +31,43 @@ class Project {
     var diagonal2Photos: Int = 0
     var additionalStats: [String: Double] = [:] // For future API data
     
+    // Analysis results storage - simplified for SwiftData compatibility
+    var diagonal1Percentage: Double?
+    var diagonal2Percentage: Double?
+    
+    // Computed property to check if analysis has been performed
+    var hasAnalysisResults: Bool {
+        return canopyCoverPercentage != nil && (diagonal1Percentage != nil || diagonal2Percentage != nil)
+    }
+    
     // Computed property to check if analysis is out of date
     var isAnalysisOutOfDate: Bool {
         guard let analysisDate = lastAnalysisDate,
               let photoDate = lastPhotoModifiedDate else { return true }
         return photoDate > analysisDate
+    }
+    
+    // Computed property to get SummaryResult from stored data
+    var storedSummaryResult: SummaryResult? {
+        guard let overallAverage = canopyCoverPercentage else { return nil }
+        
+        // Convert stored diagonal results back to the format expected by SummaryResult
+        var diagonalAverages: [String: Double] = [:]
+        
+        if let diag1 = diagonal1Percentage {
+            diagonalAverages["Diagonal 1"] = diag1
+        }
+        if let diag2 = diagonal2Percentage {
+            diagonalAverages["Diagonal 2"] = diag2
+        }
+        
+        // Only return result if we have at least one diagonal
+        guard !diagonalAverages.isEmpty else { return nil }
+        
+        return SummaryResult(
+            diagonalAverages: diagonalAverages,
+            overallAverage: overallAverage
+        )
     }
 
     
