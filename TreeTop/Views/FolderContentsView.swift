@@ -354,6 +354,8 @@ struct FolderContentsView: View {
                 .appendingPathComponent(diagonal)
                 .appendingPathComponent("Photos") {
                 LiveCameraView(saveToURL: folder)
+                    .navigationTitle(diagonal)
+                    .navigationBarTitleDisplayMode(.inline)
             } else {
                 EmptyView()
             }
@@ -574,7 +576,19 @@ struct DiagonalContentsView: View {
             .onAppear(perform: loadImages)
         }
         .sheet(isPresented: $showCamera) {
-            LiveCameraView(saveToURL: photosURL)
+            NavigationView {
+                LiveCameraView(saveToURL: photosURL)
+                    .navigationTitle("\(folderName) Photos")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationBarBackButtonHidden(true)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Done") {
+                                showCamera = false
+                            }
+                        }
+                    }
+            }
         }
     }
 
@@ -675,7 +689,19 @@ struct CenterReferenceView: View {
         }
         .sheet(isPresented: $showCamera) {
             let saveURL = baseURL.appendingPathComponent(folderName)
-            LiveCameraView(saveToURL: saveURL)
+            NavigationView {
+                LiveCameraView(saveToURL: saveURL)
+                    .navigationTitle("Center Reference")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationBarBackButtonHidden(true)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Done") {
+                                showCamera = false
+                            }
+                        }
+                    }
+            }
         }
     }
 }
@@ -727,13 +753,13 @@ struct DiagonalVisualizerView: View {
                         )
                     
                     // Invisible tap areas
-                    // Diagonal 1 tap area (blue)
+                    // Diagonal 1 tap area (blue) - Top-left to bottom-right
                     Path { path in
                         path.move(to: CGPoint(x: 40, y: 40))
                         path.addLine(to: CGPoint(x: 160, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 100))
+                        path.addLine(to: CGPoint(x: 160, y: 160))
                         path.addLine(to: CGPoint(x: 100, y: 160))
-                        path.addLine(to: CGPoint(x: 40, y: 160))
+                        path.addLine(to: CGPoint(x: 40, y: 100))
                         path.closeSubpath()
                     }
                     .fill(Color.blue.opacity(0.001))
@@ -743,13 +769,13 @@ struct DiagonalVisualizerView: View {
                         showCamera = true
                     }
                     
-                    // Diagonal 2 tap area (green)
+                    // Diagonal 2 tap area (green) - Top-right to bottom-left
                     Path { path in
                         path.move(to: CGPoint(x: 40, y: 40))
                         path.addLine(to: CGPoint(x: 160, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 160))
+                        path.addLine(to: CGPoint(x: 160, y: 100))
                         path.addLine(to: CGPoint(x: 100, y: 160))
-                        path.addLine(to: CGPoint(x: 40, y: 100))
+                        path.addLine(to: CGPoint(x: 40, y: 160))
                         path.closeSubpath()
                     }
                     .fill(Color.green.opacity(0.001))

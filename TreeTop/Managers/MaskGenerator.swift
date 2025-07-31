@@ -69,7 +69,7 @@ class MaskGenerator {
         
         // Pre-process image with memory management
         autoreleasepool {
-            guard let resized = image.resized(to: CGSize(width: 256, height: 256)),
+            guard let resized = image.centerSquareCrop(to: CGSize(width: 256, height: 256)),
                   let _ = resized.toPixelBuffer() else { 
                 print("❌ Failed to preprocess image")
                 return
@@ -82,7 +82,7 @@ class MaskGenerator {
             }
         }
         
-        guard let resized = image.resized(to: CGSize(width: 256, height: 256)),
+        guard let resized = image.centerSquareCrop(to: CGSize(width: 256, height: 256)),
               let buffer = resized.toPixelBuffer() else { return nil }
         
         do {
