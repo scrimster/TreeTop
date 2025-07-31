@@ -7,14 +7,14 @@ struct AnimatedForestBackground: View {
     @State private var leafOpacities: [Double] = []
     @State private var gradientAnimation = false
     
-    // Configuration
-    private let numberOfLeaves = 15
+    // Configuration - reduced for better performance
+    private let numberOfLeaves = 8  // Reduced from 15
     private let leafColors: [Color] = [
-        Color(red: 0.15, green: 0.4, blue: 0.2).opacity(0.5),  // Deep pine green
-        Color(red: 0.1, green: 0.35, blue: 0.25).opacity(0.4), // Darker forest green
-        Color(red: 0.2, green: 0.45, blue: 0.3).opacity(0.6),  // Medium pine
-        Color(red: 0.05, green: 0.3, blue: 0.15).opacity(0.4), // Very dark pine
-        Color(red: 0.12, green: 0.38, blue: 0.28).opacity(0.5) // Pine-teal mix
+        Color(red: 0.15, green: 0.4, blue: 0.2).opacity(0.4),  // Reduced opacity for less GPU load
+        Color(red: 0.1, green: 0.35, blue: 0.25).opacity(0.3), 
+        Color(red: 0.2, green: 0.45, blue: 0.3).opacity(0.4),  
+        Color(red: 0.05, green: 0.3, blue: 0.15).opacity(0.3), 
+        Color(red: 0.12, green: 0.38, blue: 0.28).opacity(0.4) 
     ]
     
     var body: some View {
@@ -40,7 +40,7 @@ struct AnimatedForestBackground: View {
                 )
                 .ignoresSafeArea()
                 .animation(
-                    .easeInOut(duration: 6.0)
+                    .easeInOut(duration: 8.0)  // Slower animation for smoother performance
                     .repeatForever(autoreverses: true),
                     value: gradientAnimation
                 )
@@ -63,8 +63,8 @@ struct AnimatedForestBackground: View {
                     LeafView(
                         color: leafColors[index % leafColors.count],
                         size: CGSize(
-                            width: Double.random(in: 8...16),
-                            height: Double.random(in: 12...20)
+                            width: Double.random(in: 16...28),
+                            height: Double.random(in: 20...35)
                         )
                     )
                     .offset(
@@ -78,9 +78,9 @@ struct AnimatedForestBackground: View {
                     .rotationEffect(.degrees(leafRotations[safe: index] ?? 0))
                     .opacity(leafOpacities[safe: index] ?? 0.5)
                     .animation(
-                        .linear(duration: Double.random(in: 15...25))
+                        .linear(duration: Double.random(in: 20...30))  // Slower fall for smoother performance
                         .repeatForever(autoreverses: false)
-                        .delay(Double.random(in: 0...10)),
+                        .delay(Double.random(in: 0...15)),  // More spaced out timing
                         value: animateLeaves
                     )
                 }
@@ -114,7 +114,7 @@ struct AnimatedForestBackground: View {
     }
     
     private func startAnimation() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {  // Longer delay to let UI settle
             animateLeaves = true
         }
     }
@@ -130,15 +130,18 @@ struct LeafView: View {
         Image(systemName: "leaf.fill")
             .foregroundColor(color)
             .font(.system(size: min(size.width, size.height)))
-            .scaleEffect(sway ? 1.1 : 0.9)
-            .rotationEffect(.degrees(sway ? 5 : -5))
+            .scaleEffect(sway ? 1.05 : 0.95)  // Reduced scale change for smoother animation
+            .rotationEffect(.degrees(sway ? 3 : -3))  // Reduced rotation for better performance
             .animation(
-                .easeInOut(duration: Double.random(in: 2...4))
+                .easeInOut(duration: Double.random(in: 3...5))  // Slower sway animation
                 .repeatForever(autoreverses: true),
                 value: sway
             )
             .onAppear {
-                sway = true
+                // Delay the sway animation to reduce initial load
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0...2)) {
+                    sway = true
+                }
             }
     }
 }

@@ -4,24 +4,31 @@ struct SummaryView: View {
     let result: SummaryResult
 
     var body: some View {
-        List {
-            ForEach(result.diagonalAverages.keys.sorted(), id: \.self) { key in
-                if let value = result.diagonalAverages[key] {
-                    HStack {
-                        Text(key)
-                        Spacer()
-                        Text(String(format: "%.1f%%", value))
-                    }
+        ZStack {
+            AnimatedForestBackground()
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    Spacer()
+                        .frame(height: 20)
+                    
+                    ExpandableSummaryView(result: result, initiallyExpanded: true)
+                        .padding(.horizontal)
+                    
+                    Spacer()
                 }
             }
-            HStack {
-                Text("Overall")
-                Spacer()
-                Text(String(format: "%.1f%%", result.overallAverage))
-                    .bold()
+        }
+        .navigationTitle("Analysis Summary")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Analysis Summary")
+                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .foregroundColor(.white)
             }
         }
-        .navigationTitle("Summary")
     }
 }
 

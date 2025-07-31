@@ -5,6 +5,7 @@ enum MainMenuDestination: Hashable {
     case existingProjects
     case about
     case howTo
+    case map
 }
 
 struct MainMenuView: View {
@@ -62,6 +63,10 @@ struct MainMenuView: View {
                         SmallMenuButton(icon: "folder.fill", title: "Existing Projects") {
                             path.append(.existingProjects)
                         }
+                        
+                        SmallMenuButton(icon: "map.fill", title: "Map Viewer") {
+                            path.append(.map)
+                        }
 
                         SmallMenuButton(icon: "book.fill", title: "How to Use App") {
                             path.append(.howTo)
@@ -86,6 +91,8 @@ struct MainMenuView: View {
                     AboutTreeTopView()
                 case .howTo:
                     HowToUseAppView()
+                case .map:
+                    MapScreen()
                 }
             }
         }
