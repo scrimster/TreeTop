@@ -29,9 +29,22 @@
 		EDB99FF52E02361800F9E106 /* TreeTopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreeTopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED36271C2E3BDD900038704A /* Exceptions for "TreeTop" folder in "TreeTop" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = EDB99FDB2E02361600F9E106 /* TreeTop */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		EDB99FDE2E02361600F9E106 /* TreeTop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ED36271C2E3BDD900038704A /* Exceptions for "TreeTop" folder in "TreeTop" target */,
+			);
 			path = TreeTop;
 			sourceTree = "<group>";
 		};
@@ -397,7 +410,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7N88N83LQ9;
+				DEVELOPMENT_TEAM = S5W8JP365H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "TreeTop needs camera access to capture photos of tree canopy for analysis";
@@ -412,7 +425,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.SebScrimenti.TreeTopApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.AshleySanchez.TreeTopApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -427,7 +440,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7N88N83LQ9;
+				DEVELOPMENT_TEAM = S5W8JP365H;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "TreeTop needs camera access to capture photos of tree canopy for analysis";
@@ -442,7 +455,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.SebScrimenti.TreeTopApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.AshleySanchez.TreeTopApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
