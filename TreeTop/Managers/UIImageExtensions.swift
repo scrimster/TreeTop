@@ -20,6 +20,30 @@ extension UIImage {
             self.draw(in: CGRect(origin: .zero, size: size))
         }
     }
+    
+    // Center square crop - better for canopy analysis than squeezing
+    func centerSquareCrop() -> UIImage? {
+        let currentSize = self.size
+        let sideLength = min(currentSize.width, currentSize.height)
+        
+        let cropRect = CGRect(
+            x: (currentSize.width - sideLength) / 2,
+            y: (currentSize.height - sideLength) / 2,
+            width: sideLength,
+            height: sideLength
+        )
+        
+        guard let cgImage = self.cgImage?.cropping(to: cropRect) else {
+            return nil
+        }
+        
+        return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
+    }
+    
+    // Center square crop and resize to specific size - ideal for ML processing
+    func centerSquareCrop(to targetSize: CGSize) -> UIImage? {
+        return self.centerSquareCrop()?.resized(to: targetSize)
+    }
 
     // Optimized pixel buffer conversion with error handling
     func toPixelBuffer() -> CVPixelBuffer? {
