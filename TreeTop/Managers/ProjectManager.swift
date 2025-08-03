@@ -81,7 +81,7 @@ class ProjectManager {
             name: name,
             date: date,
             folderName: folderName,
-            location: nil,
+            locationData: nil,
             latitude: 0.0,
             longitude: 0.0,
             elevation: 0.0,

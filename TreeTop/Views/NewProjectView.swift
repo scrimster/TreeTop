@@ -106,17 +106,6 @@ struct NewProjectView: View {
                 print("❌Could not find test-photo.jpg in bundle")
             }
         }
-        
-//        .navigationDestination(item: $createdProject) {
-//            project in LiveCameraView(project: project, shouldGoToExistingProjects: $shouldGoToExistingProjects)
-//                .onAppear{
-//                    print("navigating to camera")
-//                }
-//        }
-//        
-//        .navigationDestination(isPresented: $shouldGoToExistingProjects) {
-//            ExistingProjectView()
-//        }
     }
 }
 
