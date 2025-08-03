@@ -94,18 +94,6 @@ struct NewProjectView: View {
         } message: {
             Text("A project with this name already exists. Please choose a different name.")
         }
-        
-        .onAppear {
-            if let testImageURL = Bundle.main.url(forResource: "test-photo", withExtension: "jpg") {
-                if let coordinate = PhotoCoordinates.extract(from: testImageURL) {
-                    print("✅Coordinate extracted: \(coordinate.latitude), \(coordinate.longitude)")
-                } else {
-                    print("❌ Failed to extract coordinate.")
-                }
-            } else {
-                print("❌Could not find test-photo.jpg in bundle")
-            }
-        }
     }
 }
 
