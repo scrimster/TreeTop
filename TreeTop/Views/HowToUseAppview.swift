@@ -10,84 +10,67 @@ import SwiftUI
 struct HowToUseAppView: View {
     var body: some View {
         ZStack {
-            AnimatedForestBackground()
+            PerformanceOptimizedBackground()
                 .ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 30) {
+                VStack(alignment: .leading, spacing: 20) {
                     Text("How to Use TreeTop")
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.top, 20)
 
-                    StepView(stepNumber: 1,
-                             instruction: "Tap 'Start Project' to begin collecting canopy data.",
-                             gifName: "tree1")
-
-                    StepView(stepNumber: 2,
-                             instruction: "Hold your phone horizontally and use the bubble level to face straight up (zenith).",
-                             gifName: "tree2")
-
-                    StepView(stepNumber: 3,
-                             instruction: "Walk two steps and take a canopy photo facing upward.",
-                             gifName: "tree3")
-
-                    StepView(stepNumber: 4,
-                             instruction: "TreeTop stores metadata (GPS, date, time) and saves each image for analysis.",
-                             gifName: "tree4")
-
-                    StepView(stepNumber: 5,
-                             instruction: "Repeat steps along two diagonal paths to collect balanced data.",
-                             gifName: "tree5")
-
-                    StepView(stepNumber: 6,
-                             instruction: "Tap 'Save' to end the photo session. Your photos will be saved and organized by diagonal path.",
-                             gifName: "tree6")
-
-                    StepView(stepNumber: 7,
-                             instruction: "Tap 'Summary' to analyze your photos. TreeTop converts each saved image to black & white, calculates the % black pixels (canopy cover) for each diagonal folder, and averages the results.",
-                             gifName: "tree7")
+                    FrostedStepCard(stepNumber: 1, instruction: "Tap 'New Project' and enter unique project name to begin collecting canopy data.")
+                    FrostedStepCard(stepNumber: 2, instruction: "Select your project and tap on 'Take Photo' to pick which diagonal to start with.")
+                    FrostedStepCard(stepNumber: 3, instruction: "Hold your phone horizontal and use the bubble level to face straight up if autocapture is selected. Otherwise take photo manually.")
+                    FrostedStepCard(stepNumber: 4, instruction: "For every two steps taken on the diagonal take a canopy photo facing upward.")
+                    FrostedStepCard(stepNumber: 5, instruction: "Tap 'Save' after every photo, and once all photos have been taken on a diagonal, tap 'Save All.'")
+                    FrostedStepCard(stepNumber: 6, instruction: "Once all photos are saved for the first diagonal path, tap 'Take Photo' to begin the second diagonal path.")
+                    FrostedStepCard(stepNumber: 7, instruction: "After completing the second diagonal path, tap 'Run Canopy Analysis' to analyze your photos.")
+                    FrostedStepCard(stepNumber: 8, instruction: "TreeTop converts each saved image to black & white, calculates the % black pixels (canopy cover) for each diagonal folder, and averages the results.")
+                    FrostedStepCard(stepNumber: 9, instruction: "TreeTop stores metadata (GPS, date, time) and saves each image for analysis.")
 
                     Spacer()
                 }
                 .padding()
             }
         }
+        .navigationTitle("How to Use")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor(red: 0.08, green: 0.15, blue: 0.4, alpha: 1.0) // matches animated background top
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
+            UINavigationBar.appearance().standardAppearance = appearance
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        }
     }
 }
 
-struct StepView: View {
+struct FrostedStepCard: View {
     let stepNumber: Int
     let instruction: String
-    let gifName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Step \(stepNumber)")
                 .font(.headline)
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.white)
 
             Text(instruction)
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.8))
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .background(.white.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
-                    .shadow(radius: 5)
-
-                Image(gifName) // Replace with actual GIF later
-                    .resizable()
-                    .scaledToFit()
-                    .cornerRadius(20)
-                    .padding()
-            }
-            .frame(height: 200)
+                .foregroundColor(.white.opacity(0.85))
         }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(radius: 5)
     }
 }
