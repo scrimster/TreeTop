@@ -351,9 +351,11 @@ struct FolderContentsView: View {
         .navigationDestination(isPresented: $showCamera) {
             if let diagonal = selectedDiagonal,
                let folder = folderURL?
-                .appendingPathComponent(diagonal)
-                .appendingPathComponent("Photos") {
-                LiveCameraView(saveToURL: folder)
+                    .appendingPathComponent(diagonal)
+                    .appendingPathComponent("Photos"),
+               let project = project {
+                
+                LiveCameraView(saveToURL: folder, project: project, diagonalName: diagonal)
                     .navigationTitle(diagonal)
                     .navigationBarTitleDisplayMode(.inline)
             } else {
@@ -576,20 +578,39 @@ struct DiagonalContentsView: View {
             .onAppear(perform: loadImages)
         }
         .sheet(isPresented: $showCamera) {
-            NavigationView {
-                LiveCameraView(saveToURL: photosURL)
-                    .navigationTitle("\(folderName) Photos")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .navigationBarBackButtonHidden(true)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Done") {
-                                showCamera = false
+            if let project = project {
+                NavigationView {
+                    LiveCameraView(saveToURL: photosURL, project: project, diagonalName: folderName)
+                        .navigationTitle("\(folderName) Photos")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .navigationBarBackButtonHidden(true)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button("Done") {
+                                    showCamera = false
+                                }
                             }
                         }
-                    }
+                }
+            } else {
+                Text("Missing project information.")
             }
         }
+//        .sheet(isPresented: $showCamera) {
+//            NavigationView {
+//                LiveCameraView(saveToURL: photosURL, project: project, diagonalName: folderName)
+//                    .navigationTitle("\(folderName) Photos")
+//                    .navigationBarTitleDisplayMode(.inline)
+//                    .navigationBarBackButtonHidden(true)
+//                    .toolbar {
+//                        ToolbarItem(placement: .navigationBarLeading) {
+//                            Button("Done") {
+//                                showCamera = false
+//                            }
+//                        }
+//                    }
+//            }
+//        }
     }
 
     private func loadImages() {
@@ -690,7 +711,7 @@ struct CenterReferenceView: View {
         .sheet(isPresented: $showCamera) {
             let saveURL = baseURL.appendingPathComponent(folderName)
             NavigationView {
-                LiveCameraView(saveToURL: saveURL)
+                LiveCameraView(saveToURL: saveURL, project: project!, diagonalName: folderName)
                     .navigationTitle("Center Reference")
                     .navigationBarTitleDisplayMode(.inline)
                     .navigationBarBackButtonHidden(true)
@@ -835,10 +856,19 @@ struct DiagonalVisualizerView: View {
             .padding(20)
         }
         .sheet(isPresented: $showCenterCamera) {
-            if let folderURL = folderURL {
+            if let folderURL = folderURL,
+               let project = project {
                 let centerURL = folderURL.appendingPathComponent("Center Reference")
-                LiveCameraView(saveToURL: centerURL)
+                LiveCameraView(saveToURL: centerURL, project: project, diagonalName: "Center Reference")
+            } else {
+                EmptyView()
             }
         }
+//        .sheet(isPresented: $showCenterCamera) {
+//            if let folderURL = folderURL {
+//                let centerURL = folderURL.appendingPathComponent("Center Reference")
+//                LiveCameraView(saveToURL: centerURL)
+//            }
+//        }
     }
 }

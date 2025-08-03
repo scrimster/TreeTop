@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import CoreLocation
 
 @Model
 //creating the blueprint to what a single project is in the app
@@ -21,6 +22,11 @@ class Project {
     var weatherSummary: String = ""
     var location: LocationModel?
     var imagePaths: [String] = [] //stores the file paths as string to any images associated with the project. when the user adds a photo, we'll save it to disk and append the file path
+    var d1StartCoord: Coordinate?
+    var d1EndCoord: Coordinate?
+    var d2StartCoord: Coordinate?
+    var d2EndCoord: Coordinate?
+    
     
     // Project statistics fields
     var canopyCoverPercentage: Double?

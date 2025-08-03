@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import UIKit
+import CoreLocation
 
 class ProjectManager {
     static var shared: ProjectManager! //allows the instance to access the ProjectManage from anywhere
@@ -81,7 +82,7 @@ class ProjectManager {
             name: name,
             date: date,
             folderName: folderName,
-            locationData: nil,
+            location: nil,
             latitude: 0.0,
             longitude: 0.0,
             elevation: 0.0,
@@ -197,4 +198,55 @@ class ProjectManager {
         ProjectStatisticsManager.shared.updateCanopyCoverPercentage(project, percentage: canopyPercentage)
         try? modelContext.save()
     }
+    
+    func saveGPSForDiagonal(from imagePaths: [URL], for project: Project, diagonalName: String) {
+        guard !imagePaths.isEmpty else {
+            print("⚠️ No images to extract GPS from.")
+            return
+        }
+
+        let firstURL = imagePaths.first!
+        let lastURL = imagePaths.last!
+
+        let startCoord = ImageMDReader.extract(from: firstURL)
+        let endCoord = ImageMDReader.extract(from: lastURL)
+
+        if diagonalName == "Diagonal 1" {
+            project.d1StartCoord = startCoord
+            project.d1EndCoord = endCoord
+        } else if diagonalName == "Diagonal 2" {
+            project.d2StartCoord = startCoord
+            project.d2EndCoord = endCoord
+        }
+
+        do {
+            try modelContext.save()
+            print("✅ Saved GPS for \(diagonalName): start=\(String(describing: startCoord)), end=\(String(describing: endCoord))")
+        } catch {
+            print("❌ Failed to save project with GPS updates: \(error)")
+        }
+    }
+    
+    func saveDiagonalCoordinates(for project: Project, diagonal: String) {
+        guard let folderURL = project.photoFolderURL(forDiagonal: diagonal) else {
+            print("⚠️ No folder URL found for diagonal: \(diagonal)")
+            return
+        }
+        
+        let (start, end) = GPSBatchExtractor.extractEndpoints(from: folderURL)
+        
+        if diagonal == "Diagonal 1" {
+            project.d1StartCoord = start
+            project.d1EndCoord = end
+            print("📌 Saved D1 start/end coordinates to project: \(project.name)")
+        } else if diagonal == "Diagonal 2" {
+            project.d2StartCoord = start
+            project.d2EndCoord = end
+            print("📌 Saved D2 start/end coordinates to project: \(project.name)")
+        } else {
+            print("❓ Invalid diagonal name: \(diagonal)")
+        }
+    }
+
+
 }
