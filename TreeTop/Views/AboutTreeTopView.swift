@@ -119,8 +119,12 @@ TreeTop collects location, date, and time metadata with each image and provides 
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             let appearance = UINavigationBarAppearance()
-            appearance.configureWithTransparentBackground()
-            appearance.backgroundColor = .clear
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor(red: 0.08, green: 0.15, blue: 0.4, alpha: 1.0) // matches animated background
+
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
             UINavigationBar.appearance().standardAppearance = appearance
             UINavigationBar.appearance().scrollEdgeAppearance = appearance
         }
