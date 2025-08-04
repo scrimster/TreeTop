@@ -103,6 +103,11 @@ class ProjectManager {
                     try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
             }
+            
+            // Create center reference folder
+            let centerRefURL = folderURL.appendingPathComponent("CenterReference")
+            try FileManager.default.createDirectory(at: centerRefURL, withIntermediateDirectories: true)
+            
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
             return newProject
@@ -245,6 +250,144 @@ class ProjectManager {
             print("📌 Saved D2 start/end coordinates to project: \(project.name)")
         } else {
             print("❓ Invalid diagonal name: \(diagonal)")
+        }
+    }
+    
+    // MARK: - Center Reference Photo Management
+    
+    func saveCenterReferencePhoto(_ image: UIImage, to project: Project, location: CLLocation?) -> Bool {
+        // Create center reference directory if it doesn't exist
+        guard let projectFolderURL = project.folderURL else {
+            print("❌ Failed to get project folder URL")
+            return false
+        }
+        
+        print("📁 Project folder URL: \(projectFolderURL.path)")
+        
+        let centerRefFolderURL = projectFolderURL.appendingPathComponent("CenterReference")
+        print("📁 Center reference folder URL: \(centerRefFolderURL.path)")
+        
+        do {
+            if !FileManager.default.fileExists(atPath: centerRefFolderURL.path) {
+                print("📁 Creating center reference directory...")
+                try FileManager.default.createDirectory(at: centerRefFolderURL, withIntermediateDirectories: true)
+                print("✅ Center reference directory created successfully")
+            } else {
+                print("📁 Center reference directory already exists")
+            }
+        } catch {
+            print("❌ Failed to create center reference directory: \(error)")
+            return false
+        }
+        
+        // Generate filename with timestamp
+        let timestamp = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        let fileName = "center_reference_\(formatter.string(from: timestamp)).jpg"
+        let thumbnailFileName = "thumb_\(fileName)"
+        
+        let imageURL = centerRefFolderURL.appendingPathComponent(fileName)
+        let thumbnailURL = centerRefFolderURL.appendingPathComponent(thumbnailFileName)
+        
+        print("💾 Saving center reference to: \(imageURL.path)")
+        
+        // Save full-size image
+        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+            print("❌ Failed to convert image to JPEG data")
+            return false
+        }
+        
+        do {
+            try imageData.write(to: imageURL)
+            print("✅ Saved center reference image: \(fileName)")
+        } catch {
+            print("❌ Failed to save center reference image: \(error)")
+            return false
+        }
+        
+        // Create and save thumbnail (300x300)
+        let thumbnailSize = CGSize(width: 300, height: 300)
+        if let thumbnail = image.centerSquareCrop(to: thumbnailSize),
+           let thumbnailData = thumbnail.jpegData(compressionQuality: 0.8) {
+            do {
+                try thumbnailData.write(to: thumbnailURL)
+                print("✅ Saved center reference thumbnail: \(thumbnailFileName)")
+            } catch {
+                print("⚠️ Failed to save thumbnail: \(error)")
+            }
+        }
+        
+        // Update project properties
+        project.centerImageFileName = fileName
+        project.centerImageDate = timestamp
+        
+        if let location = location {
+            project.centerImageLatitude = location.coordinate.latitude
+            project.centerImageLongitude = location.coordinate.longitude
+            project.centerImageElevation = location.altitude
+            print("✅ Saved location data for center reference: lat=\(location.coordinate.latitude), lon=\(location.coordinate.longitude), alt=\(location.altitude)")
+        }
+        
+        // Save project changes
+        do {
+            try modelContext.save()
+            print("✅ Updated project with center reference data")
+            return true
+        } catch {
+            print("❌ Failed to save project updates: \(error)")
+            return false
+        }
+    }
+    
+    func getCenterReferenceImage(for project: Project) -> UIImage? {
+        guard let imageURL = project.centerReferenceImageURL(),
+              FileManager.default.fileExists(atPath: imageURL.path) else {
+            return nil
+        }
+        
+        return UIImage(contentsOfFile: imageURL.path)
+    }
+    
+    func getCenterReferenceThumbnail(for project: Project) -> UIImage? {
+        guard let thumbnailURL = project.centerReferenceThumbnailURL(),
+              FileManager.default.fileExists(atPath: thumbnailURL.path) else {
+            // Fallback to full image if thumbnail doesn't exist
+            return getCenterReferenceImage(for: project)
+        }
+        
+        return UIImage(contentsOfFile: thumbnailURL.path)
+    }
+    
+    func deleteCenterReference(for project: Project) -> Bool {
+        guard let imageURL = project.centerReferenceImageURL() else { return false }
+        
+        do {
+            // Delete full image
+            if FileManager.default.fileExists(atPath: imageURL.path) {
+                try FileManager.default.removeItem(at: imageURL)
+            }
+            
+            // Delete thumbnail if it exists
+            if let thumbnailURL = project.centerReferenceThumbnailURL(),
+               FileManager.default.fileExists(atPath: thumbnailURL.path) {
+                try FileManager.default.removeItem(at: thumbnailURL)
+            }
+            
+            // Clear project properties
+            project.centerImageFileName = nil
+            project.centerImageDate = nil
+            project.centerImageLatitude = nil
+            project.centerImageLongitude = nil
+            project.centerImageElevation = nil
+            
+            try modelContext.save()
+            print("✅ Deleted center reference for project: \(project.name)")
+            return true
+            
+        } catch {
+            print("❌ Failed to delete center reference: \(error)")
+            return false
         }
     }
 

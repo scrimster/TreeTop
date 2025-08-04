@@ -26,6 +26,13 @@ class Project {
     var d2StartCoord: Coordinate?
     var d2EndCoord: Coordinate?
     
+    // Center reference image properties
+    var centerImageLatitude: Double?
+    var centerImageLongitude: Double?
+    var centerImageElevation: Double?
+    var centerImageDate: Date?
+    var centerImageFileName: String?
+    
     
     // Project statistics fields
     var canopyCoverPercentage: Double?
@@ -42,6 +49,11 @@ class Project {
     // Computed property to check if analysis has been performed
     var hasAnalysisResults: Bool {
         return canopyCoverPercentage != nil && (diagonal1Percentage != nil || diagonal2Percentage != nil)
+    }
+    
+    // Computed property to check if center reference image exists
+    var hasCenterReference: Bool {
+        return centerImageFileName != nil
     }
     
     // Computed property to check if analysis is out of date
@@ -131,5 +143,16 @@ class Project {
     
     func maskFolderURL(forDiagonal diagonal: String) -> URL? {
         return folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Masks")
+    }
+    
+    func centerReferenceImageURL() -> URL? {
+        guard let fileName = centerImageFileName else { return nil }
+        return folderURL?.appendingPathComponent("CenterReference").appendingPathComponent(fileName)
+    }
+    
+    func centerReferenceThumbnailURL() -> URL? {
+        guard let fileName = centerImageFileName else { return nil }
+        let thumbnailName = "thumb_" + fileName
+        return folderURL?.appendingPathComponent("CenterReference").appendingPathComponent(thumbnailName)
     }
 }
