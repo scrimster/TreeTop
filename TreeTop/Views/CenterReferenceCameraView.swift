@@ -27,6 +27,14 @@ struct CenterReferenceCameraView: View {
                     }
                     
                     HStack(spacing: 20) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .padding()
+                        .background(Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        
                         Button("Retake") {
                             isPreviewingPhoto = false
                             capturedImage = nil
@@ -89,22 +97,45 @@ struct CenterReferenceCameraView: View {
                     .ignoresSafeArea(.all, edges: .all)
                     .overlay(
                         VStack {
-                            // Location status indicator
-                            VStack(spacing: 4) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: locationManager.currentLocation != nil ? "location.fill" : "location.slash")
-                                        .foregroundColor(locationManager.currentLocation != nil ? .green : .red)
-                                    
-                                    Text(locationManager.currentLocation != nil ? "Location Available" : "Getting Location...")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
+                            // Top bar with cancel button and location status
+                            HStack {
+                                // Cancel button
+                                Button(action: {
+                                    dismiss()
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 16, weight: .semibold))
+                                        Text("Cancel")
+                                            .font(.system(.callout, design: .rounded, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color.black.opacity(0.6))
+                                    .cornerRadius(20)
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.black.opacity(0.7))
-                                .cornerRadius(8)
+                                
+                                Spacer()
+                                
+                                // Location status indicator
+                                VStack(spacing: 4) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: locationManager.currentLocation != nil ? "location.fill" : "location.slash")
+                                            .foregroundColor(locationManager.currentLocation != nil ? .green : .red)
+                                        
+                                        Text(locationManager.currentLocation != nil ? "Location Available" : "Getting Location...")
+                                            .font(.caption)
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.black.opacity(0.7))
+                                    .cornerRadius(8)
+                                }
                             }
                             .padding(.top, 50)
+                            .padding(.horizontal, 20)
                             
                             Spacer()
                             

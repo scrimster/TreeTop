@@ -116,7 +116,7 @@ class MaskGenerator {
                 pixels[i] = UInt8(min(255, max(0, Int(val * 255))))
             }
             
-            let mean = sum / Double(count)
+            let mean = count > 0 ? sum / Double(count) : 0.0
             if let maskImage = UIImage.grayImage(from: pixels, width: 256, height: 256) {
                 let totalTime = Date().timeIntervalSince(startTime)
                 print("✅ Mask generation completed in \(String(format: "%.2f", totalTime))s")
