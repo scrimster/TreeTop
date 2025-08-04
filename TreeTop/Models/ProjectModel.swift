@@ -19,7 +19,6 @@ class Project {
     var latitude: Double = 0.0
     var longitude: Double = 0.0
     var elevation: Double = 0.0
-    var weatherSummary: String = ""
     var location: LocationModel?
     var d1StartCoord: Coordinate?
     var d1EndCoord: Coordinate?
@@ -119,8 +118,7 @@ class Project {
         location: LocationModel?,
         latitude: Double = 0.0,
         longitude: Double = 0.0,
-        elevation: Double = 0.0,
-        weatherSummary: String = ""
+        elevation: Double = 0.0
     ) {
         self.id = UUID()
         self.name = name
@@ -130,7 +128,6 @@ class Project {
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
-        self.weatherSummary = weatherSummary
     }
     
     var folderURL: URL? {
@@ -147,12 +144,12 @@ class Project {
     
     func centerReferenceImageURL() -> URL? {
         guard let fileName = centerImageFileName else { return nil }
-        return folderURL?.appendingPathComponent("CenterReference").appendingPathComponent(fileName)
+        return folderURL?.appendingPathComponent(fileName)
     }
     
     func centerReferenceThumbnailURL() -> URL? {
         guard let fileName = centerImageFileName else { return nil }
         let thumbnailName = "thumb_" + fileName
-        return folderURL?.appendingPathComponent("CenterReference").appendingPathComponent(thumbnailName)
+        return folderURL?.appendingPathComponent(thumbnailName)
     }
 }

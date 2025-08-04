@@ -237,6 +237,12 @@ struct FolderContentsView: View {
                             ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
                                 .padding(.horizontal)
                             
+                            // Center Reference Section - integrated into project details
+                            if let project = project {
+                                CenterReferenceProjectSection(project: project)
+                                    .padding(.horizontal)
+                            }
+                            
                             // Visual Diagonal Selector
                             DiagonalVisualizerView(
                                 project: project,
@@ -284,19 +290,11 @@ struct FolderContentsView: View {
                                             }
                                             
                                             if expandedDiagonal == file {
-                                                if file == "Center Reference" {
-                                                    CenterReferenceView(folderName: file, baseURL: folderURL!, project: project)
-                                                        .transition(.asymmetric(
-                                                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                                            removal: .opacity.combined(with: .scale(scale: 0.95))
-                                                        ))
-                                                } else {
-                                                    DiagonalContentsView(folderName: file, baseURL: folderURL!, project: project)
-                                                        .transition(.asymmetric(
-                                                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                                            removal: .opacity.combined(with: .scale(scale: 0.95))
-                                                        ))
-                                                }
+                                                DiagonalContentsView(folderName: file, baseURL: folderURL!, project: project)
+                                                    .transition(.asymmetric(
+                                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                                        removal: .opacity.combined(with: .scale(scale: 0.95))
+                                                    ))
                                             }
                                         }
                                         .padding(.horizontal, 4)
@@ -399,17 +397,16 @@ struct FolderContentsView: View {
         do {
             let fileNames = try FileManager.default.contentsOfDirectory(atPath: folderURL.path)
             
-            // Sort files to ensure proper order (Diagonal 1 before Diagonal 2, Center Reference last)
-            self.files = fileNames.sorted { (file1, file2) in
+            // Filter out Center Reference folder - it will be handled directly in project details
+            let filteredFiles = fileNames.filter { $0 != "Center Reference" }
+            
+            // Sort files to ensure proper order (Diagonal 1 before Diagonal 2)
+            self.files = filteredFiles.sorted { (file1, file2) in
                 // Special handling for diagonal folders to ensure correct order
                 if file1 == "Diagonal 1" && file2 == "Diagonal 2" {
                     return true  // Diagonal 1 comes before Diagonal 2
                 } else if file1 == "Diagonal 2" && file2 == "Diagonal 1" {
                     return false // Diagonal 2 comes after Diagonal 1
-                } else if file1 == "Center Reference" {
-                    return false // Center Reference comes last
-                } else if file2 == "Center Reference" {
-                    return true  // Anything else comes before Center Reference
                 }
                 // For all other files, use natural string comparison
                 return file1.localizedStandardCompare(file2) == .orderedAscending
@@ -893,11 +890,251 @@ struct DiagonalVisualizerView: View {
                 EmptyView()
             }
         }
-//        .sheet(isPresented: $showCenterCamera) {
-//            if let folderURL = folderURL {
-//                let centerURL = folderURL.appendingPathComponent("Center Reference")
-//                LiveCameraView(saveToURL: centerURL)
-//            }
-//        }
+    }
+}
+
+// MARK: - Center Reference Project Section
+struct CenterReferenceProjectSection: View {
+    let project: Project
+    @State private var showCenterCamera = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header section with consistent styling
+            HStack {
+                HStack(spacing: 12) {
+                    Image(systemName: "target")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.orange)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.orange.opacity(0.15))
+                        )
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Center Reference")
+                            .font(.system(.title3, design: .rounded).weight(.semibold))
+                            .glassText()
+                        
+                        Text("Canopy center point")
+                            .font(.system(.caption, design: .rounded).weight(.medium))
+                            .glassTextSecondary()
+                    }
+                }
+                
+                Spacer()
+                
+                // Status indicator
+                HStack(spacing: 6) {
+                    if project.hasCenterReference {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.green)
+                        Text("Captured")
+                            .font(.system(.caption, design: .rounded).weight(.medium))
+                            .foregroundColor(.green)
+                    } else {
+                        Image(systemName: "circle.dashed")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.orange)
+                        Text("Pending")
+                            .font(.system(.caption, design: .rounded).weight(.medium))
+                            .foregroundColor(.orange)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.6)
+                )
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.15))
+                .frame(height: 1)
+                .padding(.horizontal, 20)
+            
+            // Content section
+            VStack(spacing: 16) {
+                if project.hasCenterReference {
+                    // Existing center reference display
+                    NavigationLink(destination: CenterReferenceDetailView(project: project)) {
+                        HStack(spacing: 16) {
+                            // Thumbnail with enhanced styling
+                            ZStack {
+                                CenterReferenceThumbnail(project: project)
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                    )
+                                
+                                // Play/view icon overlay
+                                Image(systemName: "eye.fill")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .background(
+                                        Circle()
+                                            .fill(.black.opacity(0.6))
+                                            .frame(width: 24, height: 24)
+                                    )
+                                    .offset(x: 26, y: -26)
+                            }
+                            
+                            // Metadata with enhanced layout
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Reference Point")
+                                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                                    .glassText()
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    if let latitude = project.centerImageLatitude,
+                                       let longitude = project.centerImageLongitude {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "location.fill")
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundColor(.blue)
+                                            Text("\(String(format: "%.4f", latitude)), \(String(format: "%.4f", longitude))")
+                                                .font(.system(.caption, design: .rounded).weight(.medium))
+                                                .glassTextSecondary()
+                                        }
+                                    }
+                                    
+                                    if let elevation = project.centerImageElevation {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "mountain.2.fill")
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundColor(.green)
+                                            Text("\(String(format: "%.1f m", elevation)) elevation")
+                                                .font(.system(.caption, design: .rounded).weight(.medium))
+                                                .glassTextSecondary()
+                                        }
+                                    }
+                                    
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "hand.tap.fill")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.blue)
+                                        Text("Tap to view details")
+                                            .font(.system(.caption, design: .rounded).weight(.medium))
+                                            .foregroundColor(.blue)
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                    }
+                    
+                    // Replace action button
+                    Button(action: {
+                        showCenterCamera = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Replace Reference Point")
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        }
+                        .foregroundColor(.orange)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.orange.opacity(0.12))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                    
+                } else {
+                    // Capture new center reference
+                    VStack(spacing: 16) {
+                        // Explanation
+                        VStack(spacing: 8) {
+                            Image(systemName: "viewfinder")
+                                .font(.system(size: 32, weight: .light))
+                                .foregroundColor(.orange.opacity(0.8))
+                            
+                            Text("Capture Reference Point")
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .glassText()
+                            
+                            Text("Position your device directly under the center of your canopy to establish a reference point for accurate analysis.")
+                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                .glassTextSecondary()
+                                .multilineTextAlignment(.center)
+                                .lineLimit(3)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        // Capture button
+                        Button(action: {
+                            showCenterCamera = true
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "camera.macro.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                Text("Capture Center Reference")
+                                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        Color.orange,
+                                        Color.orange.opacity(0.8)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                            .shadow(color: Color.orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    }
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .opacity(0.8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        )
+        .fullScreenCover(isPresented: $showCenterCamera) {
+            if let project = project as? Project {
+                CenterReferenceCameraView(project: project)
+            }
+        }
     }
 }

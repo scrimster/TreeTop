@@ -85,8 +85,7 @@ class ProjectManager {
             location: nil,
             latitude: 0.0,
             longitude: 0.0,
-            elevation: 0.0,
-            weatherSummary: ""
+            elevation: 0.0
         ) //intializes the instance
         
         let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
@@ -103,10 +102,6 @@ class ProjectManager {
                     try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
             }
-            
-            // Create center reference folder
-            let centerRefURL = folderURL.appendingPathComponent("CenterReference")
-            try FileManager.default.createDirectory(at: centerRefURL, withIntermediateDirectories: true)
             
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
@@ -264,22 +259,6 @@ class ProjectManager {
         
         print("📁 Project folder URL: \(projectFolderURL.path)")
         
-        let centerRefFolderURL = projectFolderURL.appendingPathComponent("CenterReference")
-        print("📁 Center reference folder URL: \(centerRefFolderURL.path)")
-        
-        do {
-            if !FileManager.default.fileExists(atPath: centerRefFolderURL.path) {
-                print("📁 Creating center reference directory...")
-                try FileManager.default.createDirectory(at: centerRefFolderURL, withIntermediateDirectories: true)
-                print("✅ Center reference directory created successfully")
-            } else {
-                print("📁 Center reference directory already exists")
-            }
-        } catch {
-            print("❌ Failed to create center reference directory: \(error)")
-            return false
-        }
-        
         // Generate filename with timestamp
         let timestamp = Date()
         let formatter = DateFormatter()
@@ -287,8 +266,9 @@ class ProjectManager {
         let fileName = "center_reference_\(formatter.string(from: timestamp)).jpg"
         let thumbnailFileName = "thumb_\(fileName)"
         
-        let imageURL = centerRefFolderURL.appendingPathComponent(fileName)
-        let thumbnailURL = centerRefFolderURL.appendingPathComponent(thumbnailFileName)
+        // Save directly in project folder
+        let imageURL = projectFolderURL.appendingPathComponent(fileName)
+        let thumbnailURL = projectFolderURL.appendingPathComponent(thumbnailFileName)
         
         print("💾 Saving center reference to: \(imageURL.path)")
         
