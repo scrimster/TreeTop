@@ -44,6 +44,7 @@ struct TreeTopApp: App {
                     LoadingView()
                 }
             }
+            .preferredColorScheme(.dark)
             .onAppear {
                 // Start initialization immediately when the view appears
                 if modelContainer == nil && initializationError == nil {
