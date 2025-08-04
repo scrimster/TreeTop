@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+import CoreLocation
 
 
 //this creates an object where it holds the logic of the camera function in CameraManager(). It monitors it for any change.
@@ -19,6 +20,8 @@ struct LiveCameraView: View {
     @State var showConfirmationDialog = false
     
     var saveToURL: URL
+    var project: Project
+    var diagonalName: String
     
     var body: some View {
          VStack {
@@ -215,37 +218,87 @@ struct LiveCameraView: View {
         }
         .confirmationDialog("Save all photos?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
             Button("Confirm Save", role: .destructive) {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-                
-                do {
-                    try FileManager.default.createDirectory(at: saveToURL, withIntermediateDirectories: true)
-                    
-                    let baseTimestamp = dateFormatter.string(from: Date())
-                    
-                    for (index, image) in capturedImages.enumerated() {
-                        let fileName = "image_\(baseTimestamp)_\(String(format: "%02d", index)).jpg"
-                        let fileURL = saveToURL.appendingPathComponent(fileName)
-                        
-                        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
-                            print("failed to convert image to JPEG data")
-                            continue
-                        }
-                        
-                        try imageData.write(to: fileURL)
-                        print("saved: \(fileURL.lastPathComponent)")
-                    }
-                    
-                    // Immediately return to project page
-                    dismiss()
-                } catch {
-                    print("failed to save images: \(error)")
-                }
+                saveCapturedImages()
             }
             Button("Cancel", role: .cancel) {}
         }
     }
     
+    private func saveCapturedImages() {
+        do {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+            var savedImageURLs: [URL] = []
+
+            for (index, image) in capturedImages.enumerated() {
+                let filename = "image_\(dateFormatter.string(from: Date()))_\(String(format: "%02d", index)).jpg"
+                let fileURL = saveToURL.appendingPathComponent(filename)
+
+                if let data = image.jpegData(compressionQuality: 1.0) {
+                    try data.write(to: fileURL)
+                    savedImageURLs.append(fileURL)
+                    print("saved: \(fileURL.lastPathComponent)")
+                }
+            }
+
+            LocationManager.shared.requestLocation { location in
+                if let location = location {
+                    print("✅ GPS location received")
+                    self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
+                    ProjectManager.shared.saveGPSForDiagonal(
+                        from: savedImageURLs,
+                        for: self.project,
+                        diagonalName: self.diagonalName
+                    )
+                } else {
+                    print("⚠️ Still no location available.")
+                }
+
+                // ✅ After everything is done, go back
+                DispatchQueue.main.async {
+                    dismiss()
+                }
+            }
+
+        } catch {
+            print("❌ Failed to save image: \(error)")
+        }
+    }
+
+    
+    private func handleLocationAndSave(for savedImageURLs: [URL]) {
+        LocationManager.shared.requestLocation { location in
+            if let location = location {
+                print("✅ GPS location received")
+                self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
+                ProjectManager.shared.saveGPSForDiagonal(
+                    from: savedImageURLs,
+                    for: self.project,
+                    diagonalName: self.diagonalName
+                )
+            } else {
+                print("⚠️ Still no location available.")
+            }
+        }
+    }
+    
+    func injectGPSMetadataToEndpoints(location: CLLocation, savedImageURLs: [URL]) {
+        for fileURL in savedImageURLs {
+            guard let imageData = try? Data(contentsOf: fileURL),
+                  let source = CGImageSourceCreateWithData(imageData as CFData, nil),
+                  let uti = CGImageSourceGetType(source),
+                  let destination = CGImageDestinationCreateWithURL(fileURL as CFURL, uti, 1, nil) else {
+                continue
+            }
+
+            let gpsMetadata = location.toGPSMetadata() as CFDictionary
+            CGImageDestinationAddImageFromSource(destination, source, 0, gpsMetadata)
+            CGImageDestinationFinalize(destination)
+        }
+
+        print("✅ GPS metadata injected with fresh location request.")
+    }
+
     
     struct CameraPreview: UIViewRepresentable {
         let session: AVCaptureSession //creates a constant and defines the datatype
@@ -270,8 +323,31 @@ struct LiveCameraView: View {
 }
 
 #Preview {
-        let exampleURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("PreviewFolder")
+    let exampleURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        .appendingPathComponent("PreviewFolder")
 
-        return LiveCameraView(saveToURL: exampleURL)
-    }
+    let dummyProject = Project(
+        name: "Preview",
+        date: Date(),
+        folderName: "PreviewFolder",
+        location: LocationModel()
+    )
+
+    let dummyLocation = LocationModel(
+        center: Coordinate(latitude: 0.0, longitude: 0.0)
+    )
+
+    LiveCameraView(
+        saveToURL: exampleURL,
+        project: dummyProject,
+        diagonalName: "Diagonal 1"
+    )
+}
+
+
+//#Preview {
+//        let exampleURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+//            .appendingPathComponent("PreviewFolder")
+//
+//        return LiveCameraView(saveToURL: exampleURL)
+//    }

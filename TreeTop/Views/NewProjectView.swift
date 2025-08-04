@@ -94,17 +94,6 @@ struct NewProjectView: View {
         } message: {
             Text("A project with this name already exists. Please choose a different name.")
         }
-        
-//        .navigationDestination(item: $createdProject) {
-//            project in LiveCameraView(project: project, shouldGoToExistingProjects: $shouldGoToExistingProjects)
-//                .onAppear{
-//                    print("navigating to camera")
-//                }
-//        }
-//        
-//        .navigationDestination(isPresented: $shouldGoToExistingProjects) {
-//            ExistingProjectView()
-//        }
     }
 }
 
