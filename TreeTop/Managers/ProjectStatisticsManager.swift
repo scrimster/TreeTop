@@ -72,7 +72,8 @@ class ProjectStatisticsManager {
     
     /// Adds custom statistic for future expansion
     func addCustomStatistic(_ project: Project, key: String, value: Double) {
-        project.additionalStats[key] = value
+        // Custom statistics feature not yet implemented
+        print("Custom statistic: \(key) = \(value)")
     }
     
     private func countPhotosInFolder(_ folderURL: URL) -> Int {

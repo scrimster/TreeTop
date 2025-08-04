@@ -26,6 +26,7 @@ struct ExistingProjectView: View {
             // Breathing animated background
             AnimatedForestBackground()
                 .ignoresSafeArea()
+                .allowsHitTesting(false) // Prevent background from intercepting touches
             
             if projects.isEmpty {
                 // Empty state when no projects exist at all

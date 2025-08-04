@@ -8,13 +8,13 @@ struct AnimatedForestBackground: View {
     @State private var gradientAnimation = false
     
     // Configuration - reduced for better performance
-    private let numberOfLeaves = 8  // Reduced from 15
+    private let numberOfLeaves = 6  // Further reduced from 8
     private let leafColors: [Color] = [
-        Color(red: 0.15, green: 0.4, blue: 0.2).opacity(0.4),  // Reduced opacity for less GPU load
-        Color(red: 0.1, green: 0.35, blue: 0.25).opacity(0.3), 
-        Color(red: 0.2, green: 0.45, blue: 0.3).opacity(0.4),  
-        Color(red: 0.05, green: 0.3, blue: 0.15).opacity(0.3), 
-        Color(red: 0.12, green: 0.38, blue: 0.28).opacity(0.4) 
+        Color(red: 0.15, green: 0.4, blue: 0.2).opacity(0.3),  // Further reduced opacity
+        Color(red: 0.1, green: 0.35, blue: 0.25).opacity(0.2), 
+        Color(red: 0.2, green: 0.45, blue: 0.3).opacity(0.3),  
+        Color(red: 0.05, green: 0.3, blue: 0.15).opacity(0.2), 
+        Color(red: 0.12, green: 0.38, blue: 0.28).opacity(0.3) 
     ]
     
     var body: some View {
@@ -40,7 +40,7 @@ struct AnimatedForestBackground: View {
                 )
                 .ignoresSafeArea()
                 .animation(
-                    .easeInOut(duration: 8.0)  // Slower animation for smoother performance
+                    .easeInOut(duration: 12.0)  // Even slower animation for better performance
                     .repeatForever(autoreverses: true),
                     value: gradientAnimation
                 )
@@ -78,9 +78,9 @@ struct AnimatedForestBackground: View {
                     .rotationEffect(.degrees(leafRotations[safe: index] ?? 0))
                     .opacity(leafOpacities[safe: index] ?? 0.5)
                     .animation(
-                        .linear(duration: Double.random(in: 20...30))  // Slower fall for smoother performance
+                        .linear(duration: Double.random(in: 25...35))  // Even slower fall for better performance
                         .repeatForever(autoreverses: false)
-                        .delay(Double.random(in: 0...15)),  // More spaced out timing
+                        .delay(Double.random(in: 0...20)),  // More spaced out timing
                         value: animateLeaves
                     )
                 }
@@ -97,10 +97,23 @@ struct AnimatedForestBackground: View {
     }
     
     private func setupLeafProperties() {
+        let screenWidth = max(UIScreen.main.bounds.width, 300) // Minimum fallback width
+        let screenHeight = max(UIScreen.main.bounds.height, 600) // Minimum fallback height
+        
+        guard screenWidth.isFinite && screenHeight.isFinite else {
+            // Use safe fallback values
+            leafOffsets = (0..<numberOfLeaves).map { _ in
+                CGPoint(x: Double.random(in: -100...400), y: 700)
+            }
+            leafRotations = (0..<numberOfLeaves).map { _ in Double.random(in: 0...360) }
+            leafOpacities = (0..<numberOfLeaves).map { _ in Double.random(in: 0.2...0.6) }
+            return
+        }
+        
         leafOffsets = (0..<numberOfLeaves).map { _ in
             CGPoint(
-                x: Double.random(in: -100...UIScreen.main.bounds.width + 100),
-                y: UIScreen.main.bounds.height + 100
+                x: Double.random(in: -100...screenWidth + 100),
+                y: screenHeight + 100
             )
         }
         
@@ -114,7 +127,7 @@ struct AnimatedForestBackground: View {
     }
     
     private func startAnimation() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {  // Longer delay to let UI settle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {  // Even longer delay to let UI settle
             animateLeaves = true
         }
     }

@@ -21,7 +21,6 @@ class Project {
     var elevation: Double = 0.0
     var weatherSummary: String = ""
     var location: LocationModel?
-    var imagePaths: [String] = [] //stores the file paths as string to any images associated with the project. when the user adds a photo, we'll save it to disk and append the file path
     var d1StartCoord: Coordinate?
     var d1EndCoord: Coordinate?
     var d2StartCoord: Coordinate?
@@ -35,7 +34,6 @@ class Project {
     var totalPhotos: Int = 0
     var diagonal1Photos: Int = 0
     var diagonal2Photos: Int = 0
-    var additionalStats: [String: Double] = [:] // For future API data
     
     // Analysis results storage - simplified for SwiftData compatibility
     var diagonal1Percentage: Double?

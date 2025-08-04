@@ -11,6 +11,7 @@ struct AboutTreeTopView: View {
         ZStack {
             AnimatedForestBackground()
                 .ignoresSafeArea()
+                .allowsHitTesting(false) // Prevent background from intercepting touches
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {

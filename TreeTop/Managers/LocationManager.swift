@@ -24,14 +24,21 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.requestWhenInUseAuthorization()
-        manager.startUpdatingLocation()
+        // Don't start updating location here - wait for authorization
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         authorizationStatus = status
         
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
             manager.startUpdatingLocation()
+        case .denied, .restricted:
+            break // Silently handle denied access
+        case .notDetermined:
+            break // Waiting for user decision
+        @unknown default:
+            break // Handle unknown future cases
         }
     }
     
@@ -45,7 +52,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location error: \(error.localizedDescription)")
+        // Silently handle location errors to avoid console spam
+        completionHandler?(nil)
+        completionHandler = nil
     }
     
     func requestLocationOnce(completion: @escaping (CLLocation?) -> Void) {

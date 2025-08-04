@@ -192,9 +192,12 @@ struct FolderContentsView: View {
                             // Progress indicator for AI analysis
                             if isGeneratingSummary {
                                 VStack(spacing: 8) {
-                                    ProgressView(value: Double(summaryProgress.current), total: Double(max(1, summaryProgress.total)))
-                                        .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                                        .padding(.horizontal)
+                                    ProgressView.safeBounded(
+                                        value: Double(summaryProgress.current),
+                                        total: Double(summaryProgress.total)
+                                    )
+                                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                                    .padding(.horizontal)
                                     
                                     Text(summaryProgressMessage)
                                         .font(.caption)
