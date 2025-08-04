@@ -88,14 +88,7 @@ struct ExistingProjectView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.1))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                    )
-                            )
+                            .liquidGlass(cornerRadius: 12)
                         }
                         .padding(.horizontal)
                         .padding(.bottom, 16)
@@ -620,14 +613,11 @@ struct CenterReferenceThumbnail: View {
                     .scaledToFill()
                     .frame(width: 40, height: 40)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                    )
+                    .liquidGlassCircle(strokeOpacity: 0.25, shadowRadius: 4)
             } else {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.1))
                     .frame(width: 40, height: 40)
+                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.25, shadowRadius: 4)
                     .overlay(
                         Image(systemName: "photo")
                             .font(.system(size: 16))

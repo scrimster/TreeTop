@@ -907,10 +907,7 @@ struct CenterReferenceProjectSection: View {
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundColor(.orange)
                         .frame(width: 32, height: 32)
-                        .background(
-                            Circle()
-                                .fill(Color.orange.opacity(0.15))
-                        )
+                        .liquidGlassCircle(strokeOpacity: 0.3, shadowRadius: 4)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Center Reference")
@@ -945,18 +942,14 @@ struct CenterReferenceProjectSection: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                        .opacity(0.6)
-                )
+                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.2, shadowRadius: 6)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
             
             // Divider
             Rectangle()
-                .fill(Color.white.opacity(0.15))
+                .fill(Color.white.opacity(0.08))
                 .frame(height: 1)
                 .padding(.horizontal, 20)
             
@@ -970,10 +963,7 @@ struct CenterReferenceProjectSection: View {
                             CenterReferenceThumbnail(project: project)
                                 .frame(width: 80, height: 80)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                )
+                                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.25, shadowRadius: 6)
                             
                             // Metadata with enhanced layout
                             VStack(alignment: .leading, spacing: 6) {
@@ -1030,14 +1020,7 @@ struct CenterReferenceProjectSection: View {
                         .foregroundColor(.orange)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.orange.opacity(0.12))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                        )
+                        .liquidGlass(cornerRadius: 10, strokeOpacity: 0.3, shadowRadius: 4)
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
@@ -1099,15 +1082,7 @@ struct CenterReferenceProjectSection: View {
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
-                .opacity(0.6)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.3), lineWidth: 1)
-        )
+        .modifier(LiquidGlassStyle(cornerRadius: 20, strokeOpacity: 0.2, shadowRadius: 12))
         .fullScreenCover(isPresented: $showCenterCamera) {
             if let project = project as? Project {
                 CenterReferenceCameraView(project: project)
