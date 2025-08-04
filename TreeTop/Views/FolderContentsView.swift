@@ -100,8 +100,16 @@ struct FolderContentsView: View {
     
     var body: some View {
         ZStack {
-            AnimatedForestBackground()
-                .ignoresSafeArea()
+            // Simplified static background to reduce Metal rendering load
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.15, blue: 0.4),
+                    Color(red: 0.12, green: 0.4, blue: 0.18)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

@@ -119,6 +119,14 @@ struct NewProjectView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Defer LocationManager startup to prevent RTI race condition
+            locationManager.startUpdating()
+        }
+        .onDisappear {
+            // Stop location updates when view disappears
+            locationManager.stopUpdating()
+        }
         .alert("Project already exists", isPresented: $showDuplicateAlert) {
             Button("OK", role: .cancel) { 
                 // Clear focus to prevent RTI issues

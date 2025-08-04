@@ -23,8 +23,20 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
+        print("📍 LocationManager initialized - authorization will be requested on start")
+    }
+    
+    func startUpdating() {
+        print("📍 Starting location updates...")
         manager.requestWhenInUseAuthorization()
-        // Don't start updating location here - wait for authorization
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            manager.startUpdatingLocation()
+        }
+    }
+    
+    func stopUpdating() {
+        print("📍 Stopping location updates")
+        manager.stopUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
