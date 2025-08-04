@@ -966,27 +966,14 @@ struct CenterReferenceProjectSection: View {
                     // Existing center reference display
                     NavigationLink(destination: CenterReferenceDetailView(project: project)) {
                         HStack(spacing: 16) {
-                            // Thumbnail with enhanced styling
-                            ZStack {
-                                CenterReferenceThumbnail(project: project)
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                    )
-                                
-                                // Play/view icon overlay
-                                Image(systemName: "eye.fill")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .background(
-                                        Circle()
-                                            .fill(.black.opacity(0.6))
-                                            .frame(width: 24, height: 24)
-                                    )
-                                    .offset(x: 26, y: -26)
-                            }
+                            // Thumbnail with clean styling
+                            CenterReferenceThumbnail(project: project)
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
                             
                             // Metadata with enhanced layout
                             VStack(alignment: .leading, spacing: 6) {
@@ -1016,15 +1003,6 @@ struct CenterReferenceProjectSection: View {
                                                 .font(.system(.caption, design: .rounded).weight(.medium))
                                                 .glassTextSecondary()
                                         }
-                                    }
-                                    
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "hand.tap.fill")
-                                            .font(.system(size: 12, weight: .medium))
-                                            .foregroundColor(.blue)
-                                        Text("Tap to view details")
-                                            .font(.system(.caption, design: .rounded).weight(.medium))
-                                            .foregroundColor(.blue)
                                     }
                                 }
                             }
@@ -1114,7 +1092,6 @@ struct CenterReferenceProjectSection: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.white.opacity(0.3), lineWidth: 1)
                             )
-                            .shadow(color: Color.orange.opacity(0.3), radius: 8, x: 0, y: 4)
                         }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
@@ -1125,11 +1102,11 @@ struct CenterReferenceProjectSection: View {
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(.ultraThinMaterial)
-                .opacity(0.8)
+                .opacity(0.6)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .stroke(Color.white.opacity(0.3), lineWidth: 1)
         )
         .fullScreenCover(isPresented: $showCenterCamera) {
             if let project = project as? Project {
