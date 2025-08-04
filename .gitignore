@@ -5,9 +5,6 @@
 *.xcuserstate
 xcuserdata/
 
-# Xcode project file (contains bundle identifier and team settings)
-TreeTop.xcodeproj/project.pbxproj
-
 # Xcode shared data (but keep schemes)
 TreeTop.xcodeproj/xcshareddata/
 !TreeTop.xcodeproj/xcshareddata/xcschemes/
