@@ -5,13 +5,10 @@
 *.xcuserstate
 xcuserdata/
 
-# Ignore project.pbxproj to prevent bundle identifier conflicts
+# Xcode project file (contains bundle identifier and team settings)
 TreeTop.xcodeproj/project.pbxproj
 
-# Ignore everything in xcshareddata folders inside the .xcodeproj directory
-TreeTop.xcodeproj/xcshareddata/*
-
-# but keep shared  schemes
-TreeTop.xcodeproj/xcshareddata/xcschemes
-TreeTop.xcodeproj/xcshareddata/xcschemes/*.xcscheme
-TreeTop.xcodeproj/project.pbxproj
+# Xcode shared data (but keep schemes)
+TreeTop.xcodeproj/xcshareddata/
+!TreeTop.xcodeproj/xcshareddata/xcschemes/
+!TreeTop.xcodeproj/xcshareddata/xcschemes/*.xcscheme
