@@ -199,6 +199,7 @@ class ProjectManager {
         try? modelContext.save()
     }
     
+    
     func saveGPSForDiagonal(from imagePaths: [URL], for project: Project, diagonalName: String) {
         guard !imagePaths.isEmpty else {
             print("⚠️ No images to extract GPS from.")
@@ -208,8 +209,15 @@ class ProjectManager {
         let firstURL = imagePaths.first!
         let lastURL = imagePaths.last!
 
+        print("📍 Extracting GPS for \(diagonalName)")
+        print("📌 First image path: \(firstURL.lastPathComponent)")
+        print("📌 Last image path: \(lastURL.lastPathComponent)")
+
         let startCoord = ImageMDReader.extract(from: firstURL)
         let endCoord = ImageMDReader.extract(from: lastURL)
+
+        print("📍 Extracted startCoord: \(String(describing: startCoord))")
+        print("📍 Extracted endCoord: \(String(describing: endCoord))")
 
         if diagonalName == "Diagonal 1" {
             project.d1StartCoord = startCoord
@@ -221,11 +229,12 @@ class ProjectManager {
 
         do {
             try modelContext.save()
-            print("✅ Saved GPS for \(diagonalName): start=\(String(describing: startCoord)), end=\(String(describing: endCoord))")
+            print("✅ Saved GPS for \(diagonalName)")
         } catch {
             print("❌ Failed to save project with GPS updates: \(error)")
         }
     }
+
     
     func saveDiagonalCoordinates(for project: Project, diagonal: String) {
         guard let folderURL = project.photoFolderURL(forDiagonal: diagonal) else {

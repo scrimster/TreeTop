@@ -225,6 +225,7 @@ struct LiveCameraView: View {
     }
     
     private func saveCapturedImages() {
+        print("📸 Total captured images before saving", capturedImages.count)
         do {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
@@ -237,8 +238,20 @@ struct LiveCameraView: View {
                 if let data = image.jpegData(compressionQuality: 1.0) {
                     try data.write(to: fileURL)
                     savedImageURLs.append(fileURL)
-                    print("saved: \(fileURL.lastPathComponent)")
+                    print("📸 Saved: \(fileURL.lastPathComponent)")
+
+                    if index == 0 {
+                        print("✅ This is the FIRST image: \(fileURL.lastPathComponent)")
+                    }
+                    if index == capturedImages.count - 1 {
+                        print("✅ This is the LAST image: \(fileURL.lastPathComponent)")
+                    }
                 }
+            }
+
+            print("📁 Total savedImageURLs to be processed: \(savedImageURLs.count)")
+            savedImageURLs.forEach { url in
+                print("📂 Image file: \(url.lastPathComponent)")
             }
 
             LocationManager.shared.requestLocation { location in

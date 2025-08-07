@@ -73,11 +73,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let tempManager = CLLocationManager()
         tempManager.desiredAccuracy = kCLLocationAccuracyBest
 
-        let delegate = LocationRequestDelegate(completion: completion)
+        let delegate = LocationRequestDelegate(completion: { location in
+            completion(location)
+            // Clean up associated delegate after response
+            objc_setAssociatedObject(tempManager, "LocationDelegateKey", nil, .OBJC_ASSOCIATION_ASSIGN)
+        })
+
         tempManager.delegate = delegate
 
-        // Store the delegate so it doesn't get deallocated immediately
-        objc_setAssociatedObject(tempManager, "[\(UUID())]", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        // Associate using a fixed key to keep delegate alive
+        objc_setAssociatedObject(tempManager, "LocationDelegateKey", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
         tempManager.requestWhenInUseAuthorization()
         tempManager.requestLocation()

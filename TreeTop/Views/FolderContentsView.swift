@@ -11,6 +11,7 @@ import SwiftData
 struct FolderContentsView: View {
     let folderURL: URL?
     let project: Project? // Optional project for getting the real name
+    
     @Environment(\.modelContext) private var modelContext
     @State var files: [String] = []
     @State var showCamera = false

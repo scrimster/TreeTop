@@ -11,7 +11,7 @@ import CoreLocation
 
 @Model
 //creating the blueprint to what a single project is in the app
-class Project {
+class Project: Identifiable {
     var id: UUID
     var name: String //will store the name the user enters when creating a project
     var date: Date //stores the full date and time the user selects when creating the project
@@ -32,6 +32,10 @@ class Project {
     var centerImageDate: Date?
     var centerImageFileName: String?
     
+    var centerCoordinate: CLLocationCoordinate2D? {
+        guard let lat = centerImageLatitude, let lon = centerImageLongitude else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
     
     // Project statistics fields
     var canopyCoverPercentage: Double?

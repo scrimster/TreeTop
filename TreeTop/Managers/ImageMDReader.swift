@@ -1,5 +1,5 @@
 //
-//  PhotoCoordinates.swift
+//  ImageMDReader.swift
 //  TreeTop
 //
 //  Created by Ashley Sanchez on 8/2/25.
