@@ -249,49 +249,13 @@ struct LiveCameraView: View {
                 }
             }
 
-            print("📁 Total savedImageURLs to be processed: \(savedImageURLs.count)")
-            savedImageURLs.forEach { url in
-                print("📂 Image file: \(url.lastPathComponent)")
-            }
-
-            LocationManager.shared.requestLocation { location in
-                if let location = location {
-                    print("✅ GPS location received")
-                    self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
-                    ProjectManager.shared.saveGPSForDiagonal(
-                        from: savedImageURLs,
-                        for: self.project,
-                        diagonalName: self.diagonalName
-                    )
-                } else {
-                    print("⚠️ Still no location available.")
+                print("📁 Total savedImageURLs to be processed: \(savedImageURLs.count)")
+                savedImageURLs.forEach { url in
+                    print("📂 Image file: \(url.lastPathComponent)")
                 }
 
-                // ✅ After everything is done, go back
-                DispatchQueue.main.async {
-                    dismiss()
-                }
-            }
-
-        } catch {
+            } catch {
             print("❌ Failed to save image: \(error)")
-        }
-    }
-
-    
-    private func handleLocationAndSave(for savedImageURLs: [URL]) {
-        LocationManager.shared.requestLocation { location in
-            if let location = location {
-                print("✅ GPS location received")
-                self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
-                ProjectManager.shared.saveGPSForDiagonal(
-                    from: savedImageURLs,
-                    for: self.project,
-                    diagonalName: self.diagonalName
-                )
-            } else {
-                print("⚠️ Still no location available.")
-            }
         }
     }
     
@@ -344,10 +308,6 @@ struct LiveCameraView: View {
         date: Date(),
         folderName: "PreviewFolder",
         location: LocationModel()
-    )
-
-    let dummyLocation = LocationModel(
-        center: Coordinate(latitude: 0.0, longitude: 0.0)
     )
 
     LiveCameraView(
