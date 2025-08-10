@@ -5,6 +5,12 @@ import Accelerate
 extension UIImage {
     // Optimized resizing with better memory management
     func resized(to size: CGSize) -> UIImage? {
+        // Safety check for zero or negative dimensions
+        guard size.width > 0 && size.height > 0 else {
+            print("⚠️ Invalid target size for resizing: \(size)")
+            return self
+        }
+        
         // Avoid resizing if already the correct size
         if self.size == size {
             return self
@@ -24,6 +30,13 @@ extension UIImage {
     // Center square crop - better for canopy analysis than squeezing
     func centerSquareCrop() -> UIImage? {
         let currentSize = self.size
+        
+        // Safety check for zero or negative dimensions
+        guard currentSize.width > 0 && currentSize.height > 0 else {
+            print("⚠️ Invalid image size for cropping: \(currentSize)")
+            return nil
+        }
+        
         let sideLength = min(currentSize.width, currentSize.height)
         
         let cropRect = CGRect(

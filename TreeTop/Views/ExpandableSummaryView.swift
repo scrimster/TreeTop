@@ -319,7 +319,7 @@ struct DiagonalSummaryRow: View {
                             Rectangle()
                                 .fill(diagonalColor)
                                 .frame(
-                                    width: geometry.size.width * (percentage / 100),
+                                    width: geometry.size.width * (max(0, min(100, percentage)) / 100),
                                     height: 4
                                 )
                                 .cornerRadius(2)

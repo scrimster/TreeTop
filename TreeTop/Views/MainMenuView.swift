@@ -16,6 +16,7 @@ struct MainMenuView: View {
             ZStack {
                 // Animated forest background
                 AnimatedForestBackground()
+                    .allowsHitTesting(false) // Prevent background from intercepting touches
                 
                 VStack(spacing: 32) {
                     Spacer()

@@ -26,6 +26,7 @@ struct ExistingProjectView: View {
             // Breathing animated background
             AnimatedForestBackground()
                 .ignoresSafeArea()
+                .allowsHitTesting(false) // Prevent background from intercepting touches
             
             if projects.isEmpty {
                 // Empty state when no projects exist at all
@@ -87,14 +88,7 @@ struct ExistingProjectView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.1))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                    )
-                            )
+                            .liquidGlass(cornerRadius: 12)
                         }
                         .padding(.horizontal)
                         .padding(.bottom, 16)
@@ -364,8 +358,8 @@ struct ProjectCard: View {
     var body: some View {
         LiquidGlassCard(cornerRadius: 18) {
             VStack(alignment: .leading, spacing: 16) {
-                // Header with project name, date, and status
-                HStack {
+                // Header with project name, date, status, and center reference
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(project.name)
                             .font(.system(.title2, design: .rounded, weight: .semibold))
@@ -378,6 +372,20 @@ struct ProjectCard: View {
                     }
                     
                     Spacer()
+                    
+                    // Center reference thumbnail
+                    if project.hasCenterReference {
+                        NavigationLink(destination: CenterReferenceDetailView(project: project)) {
+                            VStack(spacing: 4) {
+                                CenterReferenceThumbnail(project: project)
+                                
+                                Text("Center Ref")
+                                    .font(.system(.caption2, design: .rounded))
+                                    .glassTextSecondary(opacity: 0.6)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                     
                     VStack(spacing: 4) {
                         // Out of date indicator
@@ -589,6 +597,60 @@ extension View {
         ZStack(alignment: alignment) {
             placeholder().opacity(shouldShow ? 1 : 0)
             self
+        }
+    }
+}
+
+struct CenterReferenceThumbnail: View {
+    let project: Project
+    @State private var thumbnailImage: UIImage?
+    
+    var body: some View {
+        Group {
+            if let image = thumbnailImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .liquidGlassCircle(strokeOpacity: 0.25, shadowRadius: 4)
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .frame(width: 40, height: 40)
+                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.25, shadowRadius: 4)
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.system(size: 16))
+                            .glassTextSecondary(opacity: 0.5)
+                    )
+            }
+        }
+        .onAppear {
+            loadThumbnail()
+        }
+        .onChange(of: project.centerImageFileName) { _, _ in
+            loadThumbnail()
+        }
+    }
+    
+    private func loadThumbnail() {
+        guard project.hasCenterReference else {
+            thumbnailImage = nil
+            return
+        }
+        
+        // Load on background queue to avoid blocking UI
+        Task {
+            let image = await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let thumbnail = ProjectManager.shared?.getCenterReferenceThumbnail(for: project)
+                    continuation.resume(returning: thumbnail)
+                }
+            }
+            
+            await MainActor.run {
+                thumbnailImage = image
+            }
         }
     }
 }

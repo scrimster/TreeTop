@@ -23,15 +23,34 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
+        print("📍 LocationManager initialized - authorization will be requested on start")
+    }
+    
+    func startUpdating() {
+        print("📍 Starting location updates...")
         manager.requestWhenInUseAuthorization()
-        manager.startUpdatingLocation()
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            manager.startUpdatingLocation()
+        }
+    }
+    
+    func stopUpdating() {
+        print("📍 Stopping location updates")
+        manager.stopUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         authorizationStatus = status
         
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
             manager.startUpdatingLocation()
+        case .denied, .restricted:
+            break // Silently handle denied access
+        case .notDetermined:
+            break // Waiting for user decision
+        @unknown default:
+            break // Handle unknown future cases
         }
     }
     
@@ -45,18 +64,25 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location error: \(error.localizedDescription)")
+        // Silently handle location errors to avoid console spam
+        completionHandler?(nil)
+        completionHandler = nil
     }
     
     func requestLocationOnce(completion: @escaping (CLLocation?) -> Void) {
         let tempManager = CLLocationManager()
         tempManager.desiredAccuracy = kCLLocationAccuracyBest
 
-        let delegate = LocationRequestDelegate(completion: completion)
+        let delegate = LocationRequestDelegate(completion: { location in
+            completion(location)
+            // Clean up associated delegate after response
+            objc_setAssociatedObject(tempManager, "LocationDelegateKey", nil, .OBJC_ASSOCIATION_ASSIGN)
+        })
+
         tempManager.delegate = delegate
 
-        // Store the delegate so it doesn't get deallocated immediately
-        objc_setAssociatedObject(tempManager, "[\(UUID())]", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        // Associate using a fixed key to keep delegate alive
+        objc_setAssociatedObject(tempManager, "LocationDelegateKey", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
         tempManager.requestWhenInUseAuthorization()
         tempManager.requestLocation()

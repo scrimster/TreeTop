@@ -225,6 +225,7 @@ struct LiveCameraView: View {
     }
     
     private func saveCapturedImages() {
+        print("📸 Total captured images before saving", capturedImages.count)
         do {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
@@ -237,48 +238,24 @@ struct LiveCameraView: View {
                 if let data = image.jpegData(compressionQuality: 1.0) {
                     try data.write(to: fileURL)
                     savedImageURLs.append(fileURL)
-                    print("saved: \(fileURL.lastPathComponent)")
+                    print("📸 Saved: \(fileURL.lastPathComponent)")
+
+                    if index == 0 {
+                        print("✅ This is the FIRST image: \(fileURL.lastPathComponent)")
+                    }
+                    if index == capturedImages.count - 1 {
+                        print("✅ This is the LAST image: \(fileURL.lastPathComponent)")
+                    }
                 }
             }
 
-            LocationManager.shared.requestLocation { location in
-                if let location = location {
-                    print("✅ GPS location received")
-                    self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
-                    ProjectManager.shared.saveGPSForDiagonal(
-                        from: savedImageURLs,
-                        for: self.project,
-                        diagonalName: self.diagonalName
-                    )
-                } else {
-                    print("⚠️ Still no location available.")
+                print("📁 Total savedImageURLs to be processed: \(savedImageURLs.count)")
+                savedImageURLs.forEach { url in
+                    print("📂 Image file: \(url.lastPathComponent)")
                 }
 
-                // ✅ After everything is done, go back
-                DispatchQueue.main.async {
-                    dismiss()
-                }
-            }
-
-        } catch {
+            } catch {
             print("❌ Failed to save image: \(error)")
-        }
-    }
-
-    
-    private func handleLocationAndSave(for savedImageURLs: [URL]) {
-        LocationManager.shared.requestLocation { location in
-            if let location = location {
-                print("✅ GPS location received")
-                self.injectGPSMetadataToEndpoints(location: location, savedImageURLs: savedImageURLs)
-                ProjectManager.shared.saveGPSForDiagonal(
-                    from: savedImageURLs,
-                    for: self.project,
-                    diagonalName: self.diagonalName
-                )
-            } else {
-                print("⚠️ Still no location available.")
-            }
         }
     }
     
@@ -331,10 +308,6 @@ struct LiveCameraView: View {
         date: Date(),
         folderName: "PreviewFolder",
         location: LocationModel()
-    )
-
-    let dummyLocation = LocationModel(
-        center: Coordinate(latitude: 0.0, longitude: 0.0)
     )
 
     LiveCameraView(

@@ -5,12 +5,14 @@ struct NewProjectView: View {
     @State var projectName: String = ""
     @State var showDuplicateAlert = false
     @StateObject private var locationManager = LocationManager()
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         ZStack {
             // Breathing animated background
             AnimatedForestBackground()
                 .ignoresSafeArea()
+                .allowsHitTesting(false) // Prevent background from intercepting touches
 
             VStack(spacing: 40) {
                 Spacer()
@@ -53,28 +55,32 @@ struct NewProjectView: View {
                             
                             TextField("Enter project name", text: $projectName)
                                 .font(.system(.body, design: .rounded))
+                                .foregroundColor(.white)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
-                                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.15, shadowRadius: 4)
-                                .glassText()
+                                .liquidGlass(cornerRadius: 12)
+                                .textInputAutocapitalization(.words)
+                                .disableAutocorrection(true)
+                                .submitLabel(.done)
+                                .focused($isTextFieldFocused)
+                                .onSubmit {
+                                    // Handle return key - create project if name is valid
+                                    if !projectName.trimmingCharacters(in: .whitespaces).isEmpty {
+                                        createProject()
+                                    }
+                                }
                         }
                         
                         LiquidGlassButton(cornerRadius: 14, action: {
-                            let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
-                            if newProject != nil {
-                                path = [.existingProjects]
-                                projectName = ""
-                            } else {
-                                showDuplicateAlert = true
-                            }
+                            createProject()
                         }) {
                             HStack(spacing: 12) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 18, weight: .semibold))
                                 Text("Create Project")
                                     .font(.system(.headline, design: .rounded, weight: .semibold))
-                                    .glassText()
                             }
+                            .glassText()
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                         }
@@ -89,10 +95,38 @@ struct NewProjectView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Defer LocationManager startup to prevent RTI race condition
+            locationManager.startUpdating()
+        }
+        .onDisappear {
+            // Stop location updates when view disappears
+            locationManager.stopUpdating()
+        }
         .alert("Project already exists", isPresented: $showDuplicateAlert) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) { 
+                // Clear focus to prevent RTI issues
+                isTextFieldFocused = false
+            }
         } message: {
             Text("A project with this name already exists. Please choose a different name.")
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private func createProject() {
+        // Dismiss keyboard first to prevent RTI issues
+        isTextFieldFocused = false
+        
+        // Small delay to ensure keyboard dismissal completes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
+            if newProject != nil {
+                path = [.existingProjects]
+                projectName = ""
+            } else {
+                showDuplicateAlert = true
+            }
         }
     }
 }

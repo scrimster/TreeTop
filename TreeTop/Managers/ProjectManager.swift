@@ -85,8 +85,7 @@ class ProjectManager {
             location: nil,
             latitude: 0.0,
             longitude: 0.0,
-            elevation: 0.0,
-            weatherSummary: ""
+            elevation: 0.0
         ) //intializes the instance
         
         let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
@@ -103,6 +102,7 @@ class ProjectManager {
                     try FileManager.default.createDirectory(at: photosURL, withIntermediateDirectories: true)
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
             }
+            
             modelContext.insert(newProject) //inserts the new project into the SwiftData model
             print("New project created successfully")
             return newProject
@@ -199,52 +199,126 @@ class ProjectManager {
         try? modelContext.save()
     }
     
-    func saveGPSForDiagonal(from imagePaths: [URL], for project: Project, diagonalName: String) {
-        guard !imagePaths.isEmpty else {
-            print("⚠️ No images to extract GPS from.")
-            return
+    // MARK: - Center Reference Photo Management
+    
+    func saveCenterReferencePhoto(_ image: UIImage, to project: Project, location: CLLocation?) -> Bool {
+        // Create center reference directory if it doesn't exist
+        guard let projectFolderURL = project.folderURL else {
+            print("❌ Failed to get project folder URL")
+            return false
         }
-
-        let firstURL = imagePaths.first!
-        let lastURL = imagePaths.last!
-
-        let startCoord = ImageMDReader.extract(from: firstURL)
-        let endCoord = ImageMDReader.extract(from: lastURL)
-
-        if diagonalName == "Diagonal 1" {
-            project.d1StartCoord = startCoord
-            project.d1EndCoord = endCoord
-        } else if diagonalName == "Diagonal 2" {
-            project.d2StartCoord = startCoord
-            project.d2EndCoord = endCoord
+        
+        print("📁 Project folder URL: \(projectFolderURL.path)")
+        
+        // Generate filename with timestamp
+        let timestamp = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        let fileName = "center_reference_\(formatter.string(from: timestamp)).jpg"
+        let thumbnailFileName = "thumb_\(fileName)"
+        
+        // Save directly in project folder
+        let imageURL = projectFolderURL.appendingPathComponent(fileName)
+        let thumbnailURL = projectFolderURL.appendingPathComponent(thumbnailFileName)
+        
+        print("💾 Saving center reference to: \(imageURL.path)")
+        
+        // Save full-size image
+        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+            print("❌ Failed to convert image to JPEG data")
+            return false
         }
-
+        
+        do {
+            try imageData.write(to: imageURL)
+            print("✅ Saved center reference image: \(fileName)")
+        } catch {
+            print("❌ Failed to save center reference image: \(error)")
+            return false
+        }
+        
+        // Create and save thumbnail (300x300)
+        let thumbnailSize = CGSize(width: 300, height: 300)
+        if let thumbnail = image.centerSquareCrop(to: thumbnailSize),
+           let thumbnailData = thumbnail.jpegData(compressionQuality: 0.8) {
+            do {
+                try thumbnailData.write(to: thumbnailURL)
+                print("✅ Saved center reference thumbnail: \(thumbnailFileName)")
+            } catch {
+                print("⚠️ Failed to save thumbnail: \(error)")
+            }
+        }
+        
+        // Update project properties
+        project.centerImageFileName = fileName
+        project.centerImageDate = timestamp
+        
+        if let location = location {
+            project.centerImageLatitude = location.coordinate.latitude
+            project.centerImageLongitude = location.coordinate.longitude
+            project.centerImageElevation = location.altitude
+            print("✅ Saved location data for center reference: lat=\(location.coordinate.latitude), lon=\(location.coordinate.longitude), alt=\(location.altitude)")
+        }
+        
+        // Save project changes
         do {
             try modelContext.save()
-            print("✅ Saved GPS for \(diagonalName): start=\(String(describing: startCoord)), end=\(String(describing: endCoord))")
+            print("✅ Updated project with center reference data")
+            return true
         } catch {
-            print("❌ Failed to save project with GPS updates: \(error)")
+            print("❌ Failed to save project updates: \(error)")
+            return false
         }
     }
     
-    func saveDiagonalCoordinates(for project: Project, diagonal: String) {
-        guard let folderURL = project.photoFolderURL(forDiagonal: diagonal) else {
-            print("⚠️ No folder URL found for diagonal: \(diagonal)")
-            return
+    func getCenterReferenceImage(for project: Project) -> UIImage? {
+        guard let imageURL = project.centerReferenceImageURL(),
+              FileManager.default.fileExists(atPath: imageURL.path) else {
+            return nil
         }
         
-        let (start, end) = GPSBatchExtractor.extractEndpoints(from: folderURL)
+        return UIImage(contentsOfFile: imageURL.path)
+    }
+    
+    func getCenterReferenceThumbnail(for project: Project) -> UIImage? {
+        guard let thumbnailURL = project.centerReferenceThumbnailURL(),
+              FileManager.default.fileExists(atPath: thumbnailURL.path) else {
+            // Fallback to full image if thumbnail doesn't exist
+            return getCenterReferenceImage(for: project)
+        }
         
-        if diagonal == "Diagonal 1" {
-            project.d1StartCoord = start
-            project.d1EndCoord = end
-            print("📌 Saved D1 start/end coordinates to project: \(project.name)")
-        } else if diagonal == "Diagonal 2" {
-            project.d2StartCoord = start
-            project.d2EndCoord = end
-            print("📌 Saved D2 start/end coordinates to project: \(project.name)")
-        } else {
-            print("❓ Invalid diagonal name: \(diagonal)")
+        return UIImage(contentsOfFile: thumbnailURL.path)
+    }
+    
+    func deleteCenterReference(for project: Project) -> Bool {
+        guard let imageURL = project.centerReferenceImageURL() else { return false }
+        
+        do {
+            // Delete full image
+            if FileManager.default.fileExists(atPath: imageURL.path) {
+                try FileManager.default.removeItem(at: imageURL)
+            }
+            
+            // Delete thumbnail if it exists
+            if let thumbnailURL = project.centerReferenceThumbnailURL(),
+               FileManager.default.fileExists(atPath: thumbnailURL.path) {
+                try FileManager.default.removeItem(at: thumbnailURL)
+            }
+            
+            // Clear project properties
+            project.centerImageFileName = nil
+            project.centerImageDate = nil
+            project.centerImageLatitude = nil
+            project.centerImageLongitude = nil
+            project.centerImageElevation = nil
+            
+            try modelContext.save()
+            print("✅ Deleted center reference for project: \(project.name)")
+            return true
+            
+        } catch {
+            print("❌ Failed to delete center reference: \(error)")
+            return false
         }
     }
 

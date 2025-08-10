@@ -11,7 +11,7 @@ import CoreLocation
 
 @Model
 //creating the blueprint to what a single project is in the app
-class Project {
+class Project: Identifiable {
     var id: UUID
     var name: String //will store the name the user enters when creating a project
     var date: Date //stores the full date and time the user selects when creating the project
@@ -19,14 +19,23 @@ class Project {
     var latitude: Double = 0.0
     var longitude: Double = 0.0
     var elevation: Double = 0.0
-    var weatherSummary: String = ""
     var location: LocationModel?
-    var imagePaths: [String] = [] //stores the file paths as string to any images associated with the project. when the user adds a photo, we'll save it to disk and append the file path
     var d1StartCoord: Coordinate?
     var d1EndCoord: Coordinate?
     var d2StartCoord: Coordinate?
     var d2EndCoord: Coordinate?
     
+    // Center reference image properties
+    var centerImageLatitude: Double?
+    var centerImageLongitude: Double?
+    var centerImageElevation: Double?
+    var centerImageDate: Date?
+    var centerImageFileName: String?
+    
+    var centerCoordinate: CLLocationCoordinate2D? {
+        guard let lat = centerImageLatitude, let lon = centerImageLongitude else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
     
     // Project statistics fields
     var canopyCoverPercentage: Double?
@@ -35,7 +44,6 @@ class Project {
     var totalPhotos: Int = 0
     var diagonal1Photos: Int = 0
     var diagonal2Photos: Int = 0
-    var additionalStats: [String: Double] = [:] // For future API data
     
     // Analysis results storage - simplified for SwiftData compatibility
     var diagonal1Percentage: Double?
@@ -44,6 +52,11 @@ class Project {
     // Computed property to check if analysis has been performed
     var hasAnalysisResults: Bool {
         return canopyCoverPercentage != nil && (diagonal1Percentage != nil || diagonal2Percentage != nil)
+    }
+    
+    // Computed property to check if center reference image exists
+    var hasCenterReference: Bool {
+        return centerImageFileName != nil
     }
     
     // Computed property to check if analysis is out of date
@@ -109,8 +122,7 @@ class Project {
         location: LocationModel?,
         latitude: Double = 0.0,
         longitude: Double = 0.0,
-        elevation: Double = 0.0,
-        weatherSummary: String = ""
+        elevation: Double = 0.0
     ) {
         self.id = UUID()
         self.name = name
@@ -120,7 +132,6 @@ class Project {
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
-        self.weatherSummary = weatherSummary
     }
     
     var folderURL: URL? {
@@ -133,5 +144,16 @@ class Project {
     
     func maskFolderURL(forDiagonal diagonal: String) -> URL? {
         return folderURL?.appendingPathComponent(diagonal).appendingPathComponent("Masks")
+    }
+    
+    func centerReferenceImageURL() -> URL? {
+        guard let fileName = centerImageFileName else { return nil }
+        return folderURL?.appendingPathComponent(fileName)
+    }
+    
+    func centerReferenceThumbnailURL() -> URL? {
+        guard let fileName = centerImageFileName else { return nil }
+        let thumbnailName = "thumb_" + fileName
+        return folderURL?.appendingPathComponent(thumbnailName)
     }
 }
