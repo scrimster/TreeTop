@@ -199,22 +199,28 @@ struct CenterReferenceCameraView: View {
         .onAppear {
             print("🔍 CenterReference: View appeared, initializing camera")
             cameraManager.initializeCamera()
+            // Start location updates to ensure we have altitude when saving
+            locationManager.startUpdating()
         }
         .onDisappear {
             cameraManager.stopSession()
+            locationManager.stopUpdating()
         }
     }
     
     private func saveCenterReference() {
         guard let image = capturedImage else { return }
-        
-        let success = ProjectManager.shared?.saveCenterReferencePhoto(image, to: project, location: locationManager.currentLocation) ?? false
-        
-        if success {
-            showSaveConfirmation = true
+        // Prefer current location; if unavailable, request a one-time location before saving
+        if let loc = locationManager.currentLocation {
+            let success = ProjectManager.shared?.saveCenterReferencePhoto(image, to: project, location: loc) ?? false
+            if success { showSaveConfirmation = true } else { print("Failed to save center reference photo") }
         } else {
-            // Handle error case
-            print("Failed to save center reference photo")
+            locationManager.requestLocationOnce { loc in
+                let success = ProjectManager.shared?.saveCenterReferencePhoto(image, to: project, location: loc) ?? false
+                DispatchQueue.main.async {
+                    if success { self.showSaveConfirmation = true } else { print("Failed to save center reference photo") }
+                }
+            }
         }
     }
 }

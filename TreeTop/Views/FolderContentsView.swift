@@ -38,11 +38,162 @@ struct FolderContentsView: View {
     @State private var exportErrorMessage = ""
     @State private var showExportError = false
     
+    // Tab selection: Overview vs Capture
+    private enum ProjectTab: String, CaseIterable, Identifiable { case overview = "Overview", capture = "Capture"; var id: String { rawValue } }
+    @State private var selectedTab: ProjectTab = .overview
+
+    // Capture counts for compact cards
+    @State private var d1PhotosCount: Int = 0
+    @State private var d1MasksCount: Int = 0
+    @State private var d2PhotosCount: Int = 0
+    @State private var d2MasksCount: Int = 0
+    @State private var showAdvancedFolders: Bool = false
+    @State private var showClearDiagonalAlert: Bool = false
+    @State private var diagonalToClear: String? = nil
+    
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
         return lastComponent == "Diagonal 1" || lastComponent == "Diagonal 2"
     }
     
+    // MARK: - Project Data Card
+    @ViewBuilder
+    private func projectDataCard(_ project: Project) -> some View {
+        let canopy = project.canopyCoverPercentage ?? 0
+        let canopyColor: Color = canopyColorFor(canopy)
+        
+        return LiquidGlassCard(cornerRadius: 18) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(project.name)
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                        .glassText()
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                    Spacer()
+                    // Canopy badge
+                    HStack(spacing: 6) {
+                        Circle().fill(canopyColor).frame(width: 8, height: 8)
+                        Text(project.canopyCoverPercentage != nil ? String(format: "%.1f%%", canopy) : "—")
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(canopyColor)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
+                }
+
+                // Meta rows
+                VStack(spacing: 10) {
+                    metaRow(icon: "calendar", title: "Created", value: project.date.formatted(.dateTime.month().day().year()))
+                    if let c = project.centerCoordinate {
+                        metaRow(icon: "location.fill", title: "Coordinates", value: String(format: "%.5f, %.5f", c.latitude, c.longitude))
+                    } else {
+                        metaRow(icon: "location", title: "Coordinates", value: "—")
+                    }
+                    metaRow(icon: "mountain.2.fill", title: "Elevation", value: String(format: "%.1f m", project.elevation))
+                    HStack(spacing: 12) {
+                        chip(text: "D1: \(project.diagonal1Photos)", color: .blue)
+                        chip(text: "D2: \(project.diagonal2Photos)", color: .green)
+                        Spacer()
+                    }
+                    if let last = project.lastAnalysisDate {
+                        metaRow(icon: "clock.fill", title: "Analyzed", value: last.formatted(.dateTime.month().day().year().hour().minute()))
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+
+    private func canopyColorFor(_ pct: Double) -> Color {
+        switch pct {
+        case ..<25: return Color(red: 0.85, green: 0.2, blue: 0.2)     // red
+        case 25..<50: return Color.orange                             // orange
+        case 50..<75: return Color.yellow                             // yellow
+        default: return Color.green                                   // green
+        }
+    }
+
+    @ViewBuilder
+    private func metaRow(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white.opacity(0.85))
+                .frame(width: 18)
+            Text(title)
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                .glassTextSecondary()
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .glassText()
+        }
+    }
+
+    @ViewBuilder
+    private func chip(text: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(text)
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+    }
+
+    // MARK: - Capture Compact Cards
+    @ViewBuilder
+    private func diagonalCard<PhotosLink: View>(title: String,
+                                                photosCount: Int,
+                                                masksCount: Int,
+                                                onCapture: @escaping () -> Void,
+                                                photosLink: PhotosLink,
+                                                masksLinkURL: URL) -> some View {
+        LiquidGlassCard(cornerRadius: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(title)
+                        .font(.system(.headline, design: .rounded).weight(.semibold))
+                        .glassText()
+                    Spacer()
+                    Button(action: onCapture) { Label("Capture", systemImage: "camera") }
+                        .buttonStyle(.bordered)
+                }
+                HStack(spacing: 10) {
+                    chip(text: "Photos: \(photosCount)", color: .blue)
+                    chip(text: "Masks: \(masksCount)", color: .green)
+                    Spacer()
+                }
+                HStack(spacing: 10) {
+                    NavigationLink(destination: photosLink) {
+                        Label("Open Photos", systemImage: "photo.on.rectangle")
+                    }
+                    .buttonStyle(.bordered)
+                    NavigationLink(destination: FolderContentsView(folderURL: masksLinkURL, project: project)) {
+                        Label("Open Masks", systemImage: "rectangle.on.rectangle")
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding(14)
+        }
+    }
+
+    @ViewBuilder
+    private func dataRow(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(.footnote.weight(.semibold))
+                .glassTextSecondary()
+            Text(value)
+                .font(.system(.body, design: .rounded, weight: .semibold))
+                .glassText()
+        }
+    }
+
     var isViewContents: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
         return lastComponent == "View Contents"
@@ -122,235 +273,191 @@ struct FolderContentsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if isProjectFolder {
-                        VStack(spacing: 12) {
-                            Button(action: {
-                                guard let url = folderURL, !isGeneratingSummary else { return }
-                                
-                                // Check if project has any photos before starting analysis using existing property
-                                if let project = project, project.needsPhotos {
-                                    print("⚠️ Analysis cancelled: No photos found in project")
-                                    return
-                                }
-                                
-                                // Delete all existing masks before starting new analysis
-                                deleteAllMasks(projectURL: url)
-                                
-                                isGeneratingSummary = true
-                                summaryProgress = (current: 0, total: 0)
-                                summaryProgressMessage = "Cleaning old masks and initializing..."
-                                
-                                SummaryGenerator.createSummaryAsync(
-                                    forProjectAt: url,
-                                    progressCallback: { message, current, total in
-                                        DispatchQueue.main.async {
-                                            summaryProgress = (current: current, total: total)
-                                            summaryProgressMessage = message
-                                        }
-                                    },
-                                    completion: { result in
-                                        DispatchQueue.main.async {
-                                            isGeneratingSummary = false
-                                            switch result {
-                                            case .success(let summary):
-                                                summaryResult = summary
-                                                
-                                                // Save results to project if available
-                                                if let project = project {
-                                                    // Update project with analysis results
-                                                    project.canopyCoverPercentage = summary.overallAverage
-                                                    project.lastAnalysisDate = Date()
-                                                    
-                                                    // Store diagonal results in separate properties for SwiftData compatibility
-                                                    project.diagonal1Percentage = summary.diagonalAverages["Diagonal 1"]
-                                                    project.diagonal2Percentage = summary.diagonalAverages["Diagonal 2"]
-                                                    
-                                                    // Save to persistent storage
-                                                    do {
-                                                        try modelContext.save()
-                                                    } catch {
-                                                        print("Error saving analysis results: \(error)")
-                                                    }
-                                                }
-                                                
-                                            case .failure(let error):
-                                                summaryErrorMessage = error.localizedDescription
-                                                showSummaryError = true
-                                            }
-                                        }
-                                    }
-                                )
-                            }) {
-                                HStack {
-                                    if isGeneratingSummary {
-                                        ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                            .scaleEffect(0.8)
-                                    } else {
-                                        Image(systemName: "chart.bar.doc.horizontal")
-                                            .font(.system(size: 18, weight: .semibold))
-                                    }
-                                    
-                                    Text(isGeneratingSummary ? "Running Analysis..." : "Run Canopy Analysis")
-                                        .font(.headline)
-                                }
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    isGeneratingSummary ? Color.gray : 
-                                    (project?.needsPhotos == true ? Color.gray.opacity(0.5) : Color.blue.opacity(0.8))
-                                )
-                                .glassText()
-                                .cornerRadius(12)
-                                .padding(.horizontal)
+                        VStack(spacing: 14) {
+                            // Tab selector
+                            Picker("Tab", selection: $selectedTab) {
+                                Text(ProjectTab.overview.rawValue).tag(ProjectTab.overview)
+                                Text(ProjectTab.capture.rawValue).tag(ProjectTab.capture)
                             }
-                            .disabled(isGeneratingSummary || project?.needsPhotos == true)
-                            
-                            // Progress indicator for AI analysis
-                            if isGeneratingSummary {
-                                VStack(spacing: 8) {
-                                    ProgressView.safeBounded(
-                                        value: Double(summaryProgress.current),
-                                        total: Double(summaryProgress.total)
-                                    )
-                                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                                    .padding(.horizontal)
-                                    
-                                    Text(summaryProgressMessage)
-                                        .font(.caption)
-                                        .glassTextSecondary()
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal)
-                                    
-                                    if summaryProgress.total > 0 {
-                                        Text("\(summaryProgress.current) / \(summaryProgress.total) images processed")
-                                            .font(.caption2)
-                                            .glassTextSecondary()
-                                    }
-                                    
-                                    Button("Cancel Analysis") {
-                                        isGeneratingSummary = false
-                                        SummaryGenerator.cancelSummaryGeneration()
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .padding(.top, 4)
-                                }
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
-                                .padding(.horizontal)
-                            }
-                            
-                            // Always display expandable summary
-                            ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
-                                .padding(.horizontal)
-                            
-                            // Export PDF report
-                            Button(action: {
-                                guard let project = project, !isExportingPDF else { return }
-                                isExportingPDF = true
-                                DispatchQueue.global(qos: .userInitiated).async {
-                                    do {
-                                        let url = try PDFExportManager.shared.exportProjectReport(for: project)
-                                        DispatchQueue.main.async {
-                                            self.exportedPDFURL = url
-                                            self.showShareSheet = true
-                                            self.isExportingPDF = false
-                                        }
-                                    } catch {
-                                        DispatchQueue.main.async {
-                                            self.exportErrorMessage = error.localizedDescription
-                                            self.showExportError = true
-                                            self.isExportingPDF = false
-                                        }
-                                    }
-                                }
-                            }) {
-                                HStack {
-                                    if isExportingPDF {
-                                        ProgressView().scaleEffect(0.8)
-                                    } else {
-                                        Image(systemName: "doc.richtext")
-                                            .font(.system(size: 18, weight: .semibold))
-                                    }
-                                    Text(isExportingPDF ? "Exporting…" : "Export Project PDF")
-                                        .font(.headline)
-                                }
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(isExportingPDF ? Color.gray : Color.purple.opacity(0.85))
-                                .glassText()
-                                .cornerRadius(12)
-                                .padding(.horizontal)
-                            }
-                            .disabled(isExportingPDF)
-
-                            // Center Reference Section - integrated into project details
-                            if let project = project {
-                                CenterReferenceProjectSection(project: project)
-                                    .padding(.horizontal)
-                            }
-                            
-                            // Visual Diagonal Selector
-                            DiagonalVisualizerView(
-                                project: project,
-                                folderURL: folderURL,
-                                selectedDiagonal: $selectedDiagonal,
-                                showCamera: $showCamera
-                            )
+                            .pickerStyle(.segmented)
                             .padding(.horizontal)
-                            
-                            VStack(spacing: 12) {
-                                ForEach(files, id: \.self) { file in
-                                    let fullPath = folderURL?.appendingPathComponent(file)
-                                    var isDirectory: ObjCBool = false
-                                    
-                                    if let fullPath = fullPath,
-                                       FileManager.default.fileExists(atPath: fullPath.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            LiquidGlassButton(cornerRadius: 14, action: {
-                                                withAnimation(.easeInOut(duration: 0.3)) {
-                                                    if expandedDiagonal == file {
-                                                        expandedDiagonal = nil
-                                                    } else {
-                                                        expandedDiagonal = file
-                                                    }
-                                                }
-                                            }) {
-                                                HStack {
-                                                    Image(systemName: expandedDiagonal == file ? "folder.fill" : "folder")
-                                                        .glassTextSecondary(opacity: 0.85)
-                                                        .font(.system(size: 20))
-                                                    
-                                                    Text(file)
-                                                        .glassText()
-                                                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                                                    
-                                                    Spacer()
-                                                    
-                                                    Image(systemName: expandedDiagonal == file ? "chevron.down" : "chevron.right")
-                                                        .glassTextSecondary(opacity: 0.6)
-                                                        .font(.system(size: 12, weight: .semibold))
-                                                        .animation(.easeInOut(duration: 0.2), value: expandedDiagonal == file)
-                                                }
-                                                .padding(.horizontal, 16)
-                                                .padding(.vertical, 14)
+
+                            switch selectedTab {
+                            case .overview:
+                                // 1) Project details first
+                                if let project = project {
+                                    projectDataCard(project)
+                                        .padding(.horizontal)
+                                }
+
+                                // 2) Analysis summary
+                                ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
+                                    .padding(.horizontal)
+
+                                // 3) Run Canopy Analysis
+                                Button(action: {
+                                    guard let url = folderURL, !isGeneratingSummary else { return }
+                                    if let project = project, project.needsPhotos { return }
+                                    deleteAllMasks(projectURL: url)
+                                    isGeneratingSummary = true
+                                    summaryProgress = (0, 0)
+                                    summaryProgressMessage = "Initializing…"
+                                    SummaryGenerator.createSummaryAsync(
+                                        forProjectAt: url,
+                                        progressCallback: { message, current, total in
+                                            DispatchQueue.main.async {
+                                                summaryProgress = (current, total)
+                                                summaryProgressMessage = message
                                             }
-                                            
-                                            if expandedDiagonal == file {
-                                                DiagonalContentsView(folderName: file, baseURL: folderURL!, project: project)
-                                                    .transition(.asymmetric(
-                                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                                        removal: .opacity.combined(with: .scale(scale: 0.95))
-                                                    ))
+                                        },
+                                        completion: { result in
+                                            DispatchQueue.main.async {
+                                                isGeneratingSummary = false
+                                                switch result {
+                                                case .success(let summary):
+                                                    summaryResult = summary
+                                                    if let project = project {
+                                                        project.canopyCoverPercentage = summary.overallAverage
+                                                        project.lastAnalysisDate = Date()
+                                                        project.diagonal1Percentage = summary.diagonalAverages["Diagonal 1"]
+                                                        project.diagonal2Percentage = summary.diagonalAverages["Diagonal 2"]
+                                                        try? modelContext.save()
+                                                    }
+                                                case .failure(let error):
+                                                    summaryErrorMessage = error.localizedDescription
+                                                    showSummaryError = true
+                                                }
                                             }
                                         }
-                                        .padding(.horizontal, 4)
-                                        .id(file)
+                                    )
+                                }) {
+                                    Label(isGeneratingSummary ? "Running Analysis…" : "Run Canopy Analysis", systemImage: "chart.bar.doc.horizontal")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(isGeneratingSummary || project?.needsPhotos == true)
+                                .padding(.horizontal)
+
+                                if isGeneratingSummary {
+                                    VStack(spacing: 8) {
+                                        ProgressView.safeBounded(value: Double(summaryProgress.current), total: Double(summaryProgress.total))
+                                            .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                                        Text(summaryProgressMessage).font(.caption).glassTextSecondary()
+                                        if summaryProgress.total > 0 {
+                                            Text("\(summaryProgress.current) / \(summaryProgress.total) images processed").font(.caption2).glassTextSecondary()
+                                        }
+                                        Button("Cancel Analysis") { isGeneratingSummary = false; SummaryGenerator.cancelSummaryGeneration() }
+                                            .font(.caption)
+                                            .foregroundColor(.red)
                                     }
+                                    .padding()
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(8)
+                                    .padding(.horizontal)
+                                }
+
+                                // 4) Export PDF (smaller)
+                                Button(action: {
+                                    guard let project = project, !isExportingPDF else { return }
+                                    isExportingPDF = true
+                                    DispatchQueue.global(qos: .userInitiated).async {
+                                        do {
+                                            let url = try PDFExportManager.shared.exportProjectReport(for: project)
+                                            DispatchQueue.main.async { self.exportedPDFURL = url; self.showShareSheet = true; self.isExportingPDF = false }
+                                        } catch {
+                                            DispatchQueue.main.async { self.exportErrorMessage = error.localizedDescription; self.showExportError = true; self.isExportingPDF = false }
+                                        }
+                                    }
+                                }) {
+                                    Label(isExportingPDF ? "Exporting…" : "Export PDF", systemImage: "doc.richtext")
+                                }
+                                .buttonStyle(.bordered)
+                                .padding(.horizontal)
+
+                                Spacer(minLength: 8)
+
+                            case .capture:
+                                if let project = project {
+                                    CenterReferenceProjectSection(project: project)
+                                        .padding(.horizontal)
+                                }
+
+                                // Compact visual guide
+                                DiagonalVisualizerView(
+                                    project: project,
+                                    folderURL: folderURL,
+                                    selectedDiagonal: $selectedDiagonal,
+                                    showCamera: $showCamera
+                                )
+                                .padding(.horizontal)
+
+                                // Removed diagonal photos buttons by request
+
+                                // Advanced folders (optional)
+                                DisclosureGroup(isExpanded: $showAdvancedFolders) {
+                                    // Danger zone
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange)
+                                            Text("Advanced actions. Clearing a diagonal will permanently delete all photos and masks in that diagonal.")
+                                                .font(.system(.caption, design: .rounded))
+                                                .glassTextSecondary()
+                                        }
+                                        HStack(spacing: 12) {
+                                            Button(role: .destructive) {
+                                                diagonalToClear = "Diagonal 1"; showClearDiagonalAlert = true
+                                            } label: { Label("Clear Diagonal 1", systemImage: "trash") }
+
+                                            Button(role: .destructive) {
+                                                diagonalToClear = "Diagonal 2"; showClearDiagonalAlert = true
+                                            } label: { Label("Clear Diagonal 2", systemImage: "trash") }
+                                        }
+                                    }
+                                    .padding(.horizontal)
+
+                                    VStack(spacing: 12) {
+                                        ForEach(files, id: \.self) { file in
+                                            let fullPath = folderURL?.appendingPathComponent(file)
+                                            var isDirectory: ObjCBool = false
+                                            if let fullPath = fullPath,
+                                               FileManager.default.fileExists(atPath: fullPath.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                                                VStack(alignment: .leading, spacing: 8) {
+                                                    LiquidGlassButton(cornerRadius: 14, action: {
+                                                        withAnimation(.easeInOut(duration: 0.3)) { expandedDiagonal = (expandedDiagonal == file) ? nil : file }
+                                                    }) {
+                                                        HStack {
+                                                            Image(systemName: expandedDiagonal == file ? "folder.fill" : "folder")
+                                                                .glassTextSecondary(opacity: 0.85)
+                                                                .font(.system(size: 20))
+                                                            Text(file)
+                                                                .glassText()
+                                                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                                            Spacer()
+                                                            Image(systemName: expandedDiagonal == file ? "chevron.down" : "chevron.right")
+                                                                .glassTextSecondary(opacity: 0.6)
+                                                                .font(.system(size: 12, weight: .semibold))
+                                                        }
+                                                        .padding(.horizontal, 16)
+                                                        .padding(.vertical, 14)
+                                                    }
+                                                    if expandedDiagonal == file {
+                                                        DiagonalContentsView(folderName: file, baseURL: folderURL!, project: project)
+                                                            .transition(.opacity)
+                                                    }
+                                                }
+                                                .padding(.horizontal, 4)
+                                                .id(file)
+                                            }
+                                        }
+                                    }
+                                    .animation(.easeInOut(duration: 0.3), value: expandedDiagonal)
+                                } label: {
+                                    Text(showAdvancedFolders ? "Hide advanced folders" : "Show advanced folders")
+                                        .font(.system(.footnote, design: .rounded))
+                                        .glassTextSecondary()
+                                        .padding(.horizontal)
                                 }
                             }
-                            .animation(.easeInOut(duration: 0.3), value: expandedDiagonal)
                         }
                     }
                     
@@ -448,6 +555,19 @@ struct FolderContentsView: View {
         } message: {
             Text(exportErrorMessage)
         }
+        .alert(isPresented: $showClearDiagonalAlert) {
+            Alert(
+                title: Text("Clear Diagonal"),
+                message: Text("This will permanently delete all Photos and Masks in \(diagonalToClear ?? "this diagonal")."),
+                primaryButton: .destructive(Text("Clear")) {
+                    if let diag = diagonalToClear, let base = folderURL {
+                        clearDiagonal(named: diag, at: base)
+                        loadFolderContents()
+                    }
+                },
+                secondaryButton: .cancel { diagonalToClear = nil }
+            )
+        }
     }
     
     private func loadFolderContents() {
@@ -478,6 +598,16 @@ struct FolderContentsView: View {
                         return UIImage(contentsOfFile: fileURL.path)
                     }
             }
+            // Update compact capture counts
+            let d1PhotosURL = folderURL.appendingPathComponent("Diagonal 1").appendingPathComponent("Photos")
+            let d1MasksURL = folderURL.appendingPathComponent("Diagonal 1").appendingPathComponent("Masks")
+            let d2PhotosURL = folderURL.appendingPathComponent("Diagonal 2").appendingPathComponent("Photos")
+            let d2MasksURL = folderURL.appendingPathComponent("Diagonal 2").appendingPathComponent("Masks")
+            let fm = FileManager.default
+            d1PhotosCount = (try? fm.contentsOfDirectory(atPath: d1PhotosURL.path).filter { $0.lowercased().hasSuffix(".jpg") }.count) ?? 0
+            d1MasksCount  = (try? fm.contentsOfDirectory(atPath: d1MasksURL.path).filter { $0.lowercased().hasSuffix(".jpg") || $0.lowercased().hasSuffix(".png") || $0.lowercased().hasSuffix(".jpeg") }.count) ?? 0
+            d2PhotosCount = (try? fm.contentsOfDirectory(atPath: d2PhotosURL.path).filter { $0.lowercased().hasSuffix(".jpg") }.count) ?? 0
+            d2MasksCount  = (try? fm.contentsOfDirectory(atPath: d2MasksURL.path).filter { $0.lowercased().hasSuffix(".jpg") || $0.lowercased().hasSuffix(".png") || $0.lowercased().hasSuffix(".jpeg") }.count) ?? 0
         } catch {
             print("failed to read folder: \(error)")
         }
@@ -516,6 +646,21 @@ struct FolderContentsView: View {
             }
         } catch {
             print("⚠️ Error deleting masks in \(url.path): \(error)")
+        }
+    }
+
+    private func clearDiagonal(named name: String, at base: URL) {
+        let fm = FileManager.default
+        let photos = base.appendingPathComponent(name).appendingPathComponent("Photos")
+        let masks = base.appendingPathComponent(name).appendingPathComponent("Masks")
+        // Remove files inside Photos and Masks
+        for dir in [photos, masks] {
+            if let items = try? fm.contentsOfDirectory(atPath: dir.path) {
+                for item in items {
+                    let url = dir.appendingPathComponent(item)
+                    try? fm.removeItem(at: url)
+                }
+            }
         }
     }
 }
@@ -848,83 +993,68 @@ struct DiagonalVisualizerView: View {
                             Circle()
                                 .stroke(Color.white, lineWidth: 2)
                         )
-                    
-                    // Invisible tap areas
-                    // Diagonal 1 tap area (blue) - Top-left to bottom-right
-                    Path { path in
-                        path.move(to: CGPoint(x: 40, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 160))
-                        path.addLine(to: CGPoint(x: 100, y: 160))
-                        path.addLine(to: CGPoint(x: 40, y: 100))
-                        path.closeSubpath()
-                    }
-                    .fill(Color.blue.opacity(0.001))
-                    .frame(width: 200, height: 200)
-                    .onTapGesture {
-                        selectedDiagonal = "Diagonal 1"
-                        showCamera = true
-                    }
-                    
-                    // Diagonal 2 tap area (green) - Top-right to bottom-left
-                    Path { path in
-                        path.move(to: CGPoint(x: 40, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 40))
-                        path.addLine(to: CGPoint(x: 160, y: 100))
-                        path.addLine(to: CGPoint(x: 100, y: 160))
-                        path.addLine(to: CGPoint(x: 40, y: 160))
-                        path.closeSubpath()
-                    }
-                    .fill(Color.green.opacity(0.001))
-                    .frame(width: 200, height: 200)
-                    .onTapGesture {
-                        selectedDiagonal = "Diagonal 2"
-                        showCamera = true
-                    }
-                    
-                    // Center tap area (orange)
-                    Circle()
-                        .fill(Color.orange.opacity(0.001))
-                        .frame(width: 40, height: 40)
-                        .onTapGesture {
-                            showCenterCamera = true
-                        }
                 }
                 
                 // Legend
                 HStack(spacing: 20) {
-                    // Diagonal 1 legend
-                    HStack(spacing: 8) {
-                        Rectangle()
-                            .fill(Color.blue)
-                            .frame(width: 20, height: 4)
-                        Text("Diagonal 1")
-                            .font(.caption)
-                            .glassTextSecondary()
+                    // Diagonal 1 capture button in legend
+                    Button {
+                        selectedDiagonal = "Diagonal 1"
+                        showCamera = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Rectangle()
+                                .fill(Color.blue)
+                                .frame(width: 20, height: 4)
+                            Text("Capture D1")
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundColor(.white.opacity(0.95))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.blue.opacity(0.25)))
                     }
+                    .buttonStyle(.plain)
                     
-                    // Diagonal 2 legend
-                    HStack(spacing: 8) {
-                        Rectangle()
-                            .fill(Color.green)
-                            .frame(width: 20, height: 4)
-                        Text("Diagonal 2")
-                            .font(.caption)
-                            .glassTextSecondary()
+                    // Diagonal 2 capture button in legend
+                    Button {
+                        selectedDiagonal = "Diagonal 2"
+                        showCamera = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Rectangle()
+                                .fill(Color.green)
+                                .frame(width: 20, height: 4)
+                            Text("Capture D2")
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundColor(.white.opacity(0.95))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.green.opacity(0.25)))
                     }
+                    .buttonStyle(.plain)
                     
-                    // Center reference legend
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.orange)
-                            .frame(width: 12, height: 12)
-                        Text("Center Reference")
-                            .font(.caption)
-                            .glassTextSecondary()
+                    // Center reference legend as capture button
+                    Button {
+                        showCenterCamera = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color.orange)
+                                .frame(width: 12, height: 12)
+                            Text("Capture Center")
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundColor(.white.opacity(0.95))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.25)))
                     }
+                    .buttonStyle(.plain)
                 }
                 
-                Text("Tap on a diagonal line or center point to take photos")
+                Text("Use the legend buttons to capture along each diagonal")
                     .font(.caption2)
                     .glassTextSecondary()
                     .multilineTextAlignment(.center)
@@ -957,190 +1087,79 @@ struct CenterReferenceProjectSection: View {
     @State private var showCenterCamera = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header section with consistent styling
-            HStack {
-                HStack(spacing: 12) {
+        LiquidGlassCard(cornerRadius: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Compact header
+                HStack(spacing: 10) {
                     Image(systemName: "target")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.orange)
-                        .frame(width: 32, height: 32)
-                        .liquidGlassCircle(strokeOpacity: 0.3, shadowRadius: 4)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Center Reference")
-                            .font(.system(.title3, design: .rounded).weight(.semibold))
-                            .glassText()
-                        
-                        Text("Canopy center point")
+                        .frame(width: 22, height: 22)
+                        .liquidGlassCircle(strokeOpacity: 0.25, shadowRadius: 3)
+                    Text("Center Reference")
+                        .font(.system(.headline, design: .rounded).weight(.semibold))
+                        .glassText()
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Circle().fill(project.hasCenterReference ? Color.green : Color.orange).frame(width: 8, height: 8)
+                        Text(project.hasCenterReference ? "Captured" : "Pending")
                             .font(.system(.caption, design: .rounded).weight(.medium))
-                            .glassTextSecondary()
+                            .foregroundColor(project.hasCenterReference ? .green : .orange)
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
                 }
-                
-                Spacer()
-                
-                // Status indicator
-                HStack(spacing: 6) {
-                    if project.hasCenterReference {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.green)
-                        Text("Captured")
-                            .font(.system(.caption, design: .rounded).weight(.medium))
-                            .foregroundColor(.green)
-                    } else {
-                        Image(systemName: "circle.dashed")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.orange)
-                        Text("Pending")
-                            .font(.system(.caption, design: .rounded).weight(.medium))
-                            .foregroundColor(.orange)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.2, shadowRadius: 6)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            
-            // Divider
-            Rectangle()
-                .fill(Color.white.opacity(0.08))
-                .frame(height: 1)
-                .padding(.horizontal, 20)
-            
-            // Content section
-            VStack(spacing: 16) {
+
                 if project.hasCenterReference {
-                    // Existing center reference display
+                    // Compact reference row
                     NavigationLink(destination: CenterReferenceDetailView(project: project)) {
-                        HStack(spacing: 16) {
-                            // Thumbnail with clean styling
+                        HStack(spacing: 10) {
                             CenterReferenceThumbnail(project: project)
-                                .frame(width: 80, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .liquidGlass(cornerRadius: 12, strokeOpacity: 0.25, shadowRadius: 6)
-                            
-                            // Metadata with enhanced layout
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Reference Point")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                                    .glassText()
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    if let latitude = project.centerImageLatitude,
-                                       let longitude = project.centerImageLongitude {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "location.fill")
-                                                .font(.system(size: 12, weight: .medium))
-                                                .foregroundColor(.blue)
-                                            Text("\(String(format: "%.4f", latitude)), \(String(format: "%.4f", longitude))")
-                                                .font(.system(.caption, design: .rounded).weight(.medium))
-                                                .glassTextSecondary()
-                                        }
-                                    }
-                                    
-                                    if let elevation = project.centerImageElevation {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "mountain.2.fill")
-                                                .font(.system(size: 12, weight: .medium))
-                                                .foregroundColor(.green)
-                                            Text("\(String(format: "%.1f m", elevation)) elevation")
-                                                .font(.system(.caption, design: .rounded).weight(.medium))
-                                                .glassTextSecondary()
-                                        }
-                                    }
+                                .frame(width: 56, height: 56)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let date = project.centerImageDate {
+                                    Text("Captured \(date.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.system(.caption, design: .rounded))
+                                        .glassTextSecondary()
+                                }
+                                if let latitude = project.centerImageLatitude, let longitude = project.centerImageLongitude {
+                                    Text("\(String(format: "%.4f", latitude)), \(String(format: "%.4f", longitude))")
+                                        .font(.system(.caption2, design: .rounded).weight(.medium))
+                                        .glassTextSecondary()
                                 }
                             }
-                            
                             Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.secondary)
+                            Image(systemName: "chevron.right").foregroundColor(.secondary)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, 2)
                     }
-                    
-                    // Replace action button
-                    Button(action: {
-                        showCenterCamera = true
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Replace Reference Point")
-                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+
+                    HStack { Spacer()
+                        Button(action: { showCenterCamera = true }) {
+                            Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                                .font(.system(.footnote, design: .rounded).weight(.semibold))
                         }
-                        .foregroundColor(.orange)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .liquidGlass(cornerRadius: 10, strokeOpacity: 0.3, shadowRadius: 4)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                    
+                        .buttonStyle(.bordered)
+                    Spacer() }
                 } else {
-                    // Capture new center reference
-                    VStack(spacing: 16) {
-                        // Explanation
-                        VStack(spacing: 8) {
-                            Image(systemName: "viewfinder")
-                                .font(.system(size: 32, weight: .light))
-                                .foregroundColor(.orange.opacity(0.8))
-                            
-                            Text("Capture Reference Point")
-                                .font(.system(.headline, design: .rounded).weight(.semibold))
-                                .glassText()
-                            
-                            Text("Position your device directly under the center of your canopy to establish a reference point for accurate analysis.")
-                                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                                .glassTextSecondary()
-                                .multilineTextAlignment(.center)
-                                .lineLimit(3)
+                    // Pending state
+                    Text("Position under the canopy center and capture a reference.")
+                        .font(.system(.caption, design: .rounded))
+                        .glassTextSecondary()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    HStack { Spacer()
+                        Button(action: { showCenterCamera = true }) {
+                            Label("Capture Center Reference", systemImage: "camera.macro.circle")
+                                .font(.system(.footnote, design: .rounded).weight(.semibold))
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                        
-                        // Capture button
-                        Button(action: {
-                            showCenterCamera = true
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "camera.macro.circle.fill")
-                                    .font(.system(size: 20, weight: .semibold))
-                                Text("Capture Center Reference")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                LinearGradient(
-                                    colors: [
-                                        Color.orange,
-                                        Color.orange.opacity(0.8)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                            )
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                    }
+                        .buttonStyle(.borderedProminent)
+                    Spacer() }
                 }
             }
+            .padding(12)
         }
-        .modifier(LiquidGlassStyle(cornerRadius: 20, strokeOpacity: 0.2, shadowRadius: 12))
         .fullScreenCover(isPresented: $showCenterCamera) {
             if let project = project as? Project {
                 CenterReferenceCameraView(project: project)

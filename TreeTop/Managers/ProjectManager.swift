@@ -257,6 +257,8 @@ class ProjectManager {
             project.centerImageLatitude = location.coordinate.latitude
             project.centerImageLongitude = location.coordinate.longitude
             project.centerImageElevation = location.altitude
+            // Also reflect elevation in the main project elevation field for overview displays
+            project.elevation = location.altitude
             print("✅ Saved location data for center reference: lat=\(location.coordinate.latitude), lon=\(location.coordinate.longitude), alt=\(location.altitude)")
         }
         
