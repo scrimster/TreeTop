@@ -122,24 +122,48 @@ final class PDFExportManager {
             _ = drawText("TreeTop Project Report", font: .boldSystemFont(ofSize: 22))
             _ = drawText(project.name, font: .systemFont(ofSize: 18))
             _ = drawText("Date: \(DateFormatter.localizedString(from: project.date, dateStyle: .medium, timeStyle: .short))", font: .systemFont(ofSize: 12), color: .darkGray)
+            
+            drawDivider(spacing: 12)
+            
+            // MARK: Project Details Section
+            _ = drawText("Project Details", font: .boldSystemFont(ofSize: 16))
+            cursorY += 8
+            
+            // Project metadata
             if let coord = project.centerCoordinate {
-                _ = drawText(String(format: "Coordinates: %.5f, %.5f", coord.latitude, coord.longitude), font: .systemFont(ofSize: 12), color: .darkGray)
+                _ = drawText("Coordinates: \(String(format: "%.5f, %.5f", coord.latitude, coord.longitude))", font: .systemFont(ofSize: 12))
             }
-            _ = drawText(String(format: "Elevation: %.1f m", project.elevation), font: .systemFont(ofSize: 12), color: .darkGray)
+            _ = drawText("Elevation: \(String(format: "%.1f m", project.elevation))", font: .systemFont(ofSize: 12))
+            
+            // Weather condition
+            if let weather = project.weatherCondition {
+                _ = drawText("Weather: \(weather)", font: .systemFont(ofSize: 12))
+            } else {
+                _ = drawText("Weather: Not specified", font: .systemFont(ofSize: 12), color: .darkGray)
+            }
+            
+            // Photo counts
+            _ = drawText("Diagonal 1 Photos: \(project.diagonal1Photos)", font: .systemFont(ofSize: 12))
+            _ = drawText("Diagonal 2 Photos: \(project.diagonal2Photos)", font: .systemFont(ofSize: 12))
+            _ = drawText("Total Photos: \(project.totalPhotos)", font: .systemFont(ofSize: 12))
+            
+            // Analysis date
+            if let last = project.lastAnalysisDate {
+                _ = drawText("Last Analyzed: \(DateFormatter.localizedString(from: last, dateStyle: .medium, timeStyle: .short))", font: .systemFont(ofSize: 12))
+            }
+            
             drawDivider(spacing: 12)
 
             // MARK: Summary
             if let summary = project.storedSummaryResult {
-                _ = drawText("Summary", font: .boldSystemFont(ofSize: 16))
+                _ = drawText("Analysis Summary", font: .boldSystemFont(ofSize: 16))
+                cursorY += 8
                 _ = drawText(String(format: "Overall Canopy Cover: %.1f%%", summary.overallAverage), font: .systemFont(ofSize: 13))
                 let diags = summary.diagonalAverages.keys.sorted()
                 for d in diags {
                     if let v = summary.diagonalAverages[d] {
                         _ = drawText("\(d): \(String(format: "%.1f%%", v))", font: .systemFont(ofSize: 12))
                     }
-                }
-                if let last = project.lastAnalysisDate {
-                    _ = drawText("Analyzed: \(DateFormatter.localizedString(from: last, dateStyle: .medium, timeStyle: .short))", font: .systemFont(ofSize: 12), color: .darkGray)
                 }
                 drawDivider(spacing: 10)
             } else {
@@ -150,6 +174,7 @@ final class PDFExportManager {
             // MARK: Center Reference (optional)
             if let refURL = project.centerReferenceImageURL(), let image = UIImage(contentsOfFile: refURL.path) {
                 _ = drawText("Center Reference", font: .boldSystemFont(ofSize: 16))
+                cursorY += 8
                 _ = drawImage(image, maxWidth: contentWidth, maxHeight: 200)
                 drawDivider(spacing: 10)
             }
@@ -169,6 +194,7 @@ final class PDFExportManager {
 
             // MARK: Methodology
             _ = drawText("Methodology", font: .boldSystemFont(ofSize: 16))
+            cursorY += 8
             let method = methodologyText()
             _ = drawText(method, font: .systemFont(ofSize: 12))
         }
@@ -187,7 +213,7 @@ final class PDFExportManager {
 
     private func methodologyText() -> String {
         return """
-        Photos are captured along two diagonals radiating from a center reference point beneath the canopy. Images are organized as Diagonal 1 and Diagonal 2. The app processes each photo with a Core ML semantic segmentation model (imageseg_canopy_model) to estimate sky vs canopy pixels. Before inference, each image is resized to 256×256 pixels and normalized. The model outputs a per‑pixel probability map; the mean sky probability is computed and canopy cover is estimated as (1 − meanSky) × 100%. The overall canopy cover is the average across all processed photos, and per‑diagonal averages are also reported. Masks rendered in this report visualize the model’s output for each photo.
+        Photos are captured along two diagonals radiating from a center reference point beneath the canopy. Images are organized as Diagonal 1 and Diagonal 2. The app processes each photo with a Core ML semantic segmentation model (imageseg_canopy_model) to estimate sky vs canopy pixels. Before inference, each image is resized to 256×256 pixels and normalized. The model outputs a per‑pixel probability map; the mean sky probability is computed and canopy cover is estimated as (1 − meanSky) × 100%. The overall canopy cover is the average across all processed photos, and per‑diagonal averages are also reported. Masks rendered in this report visualize the model's output for each photo.
         """
     }
 }
