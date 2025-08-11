@@ -213,12 +213,22 @@ struct CenterReferenceCameraView: View {
         // Prefer current location; if unavailable, request a one-time location before saving
         if let loc = locationManager.currentLocation {
             let success = ProjectManager.shared?.saveCenterReferencePhoto(image, to: project, location: loc) ?? false
-            if success { showSaveConfirmation = true } else { print("Failed to save center reference photo") }
+            if success {
+                NotificationCenter.default.post(name: .centerReferenceSaved, object: nil)
+                showSaveConfirmation = true
+            } else {
+                print("Failed to save center reference photo")
+            }
         } else {
             locationManager.requestLocationOnce { loc in
                 let success = ProjectManager.shared?.saveCenterReferencePhoto(image, to: project, location: loc) ?? false
                 DispatchQueue.main.async {
-                    if success { self.showSaveConfirmation = true } else { print("Failed to save center reference photo") }
+                    if success {
+                        NotificationCenter.default.post(name: .centerReferenceSaved, object: nil)
+                        self.showSaveConfirmation = true
+                    } else {
+                        print("Failed to save center reference photo")
+                    }
                 }
             }
         }

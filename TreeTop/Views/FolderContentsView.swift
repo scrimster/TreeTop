@@ -455,8 +455,10 @@ struct FolderContentsView: View {
                                     Text(showAdvancedFolders ? "Hide advanced folders" : "Show advanced folders")
                                         .font(.system(.footnote, design: .rounded))
                                         .glassTextSecondary()
-                                        .padding(.horizontal)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 6)
                                 }
+                                .padding(.horizontal)
                             }
                         }
                     }
@@ -955,6 +957,9 @@ struct DiagonalVisualizerView: View {
     @Binding var showCamera: Bool
     
     @State private var showCenterCamera = false
+    @State private var d1Complete: Bool = false
+    @State private var d2Complete: Bool = false
+    @State private var centerComplete: Bool = false
     
     var body: some View {
         LiquidGlassCard(cornerRadius: 16) {
@@ -995,63 +1000,102 @@ struct DiagonalVisualizerView: View {
                         )
                 }
                 
-                // Legend
-                HStack(spacing: 20) {
-                    // Diagonal 1 capture button in legend
-                    Button {
+                // Legend (center button on its own row to avoid overflow)
+                VStack(spacing: 8) {
+                    HStack(spacing: 20) {
+                        // Diagonal 1 capture button in legend
+                        Button {
                         selectedDiagonal = "Diagonal 1"
                         showCamera = true
-                    } label: {
+                        } label: {
                         HStack(spacing: 8) {
                             Rectangle()
                                 .fill(Color.blue)
                                 .frame(width: 20, height: 4)
-                            Text("Capture D1")
+                            Text(d1Complete ? "D1 Complete" : "Capture D1")
                                 .font(.system(.caption, design: .rounded).weight(.semibold))
                                 .foregroundColor(.white.opacity(0.95))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                                .allowsTightening(true)
+                                .truncationMode(.tail)
+                            if d1Complete {
+                                Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            }
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.blue.opacity(0.25)))
-                    }
-                    .buttonStyle(.plain)
-                    
-                    // Diagonal 2 capture button in legend
-                    Button {
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(d1Complete ? Color.white.opacity(0.15) : Color.blue.opacity(0.25))
+                        )
+                        .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Diagonal 2 capture button in legend
+                        Button {
                         selectedDiagonal = "Diagonal 2"
                         showCamera = true
-                    } label: {
+                        } label: {
                         HStack(spacing: 8) {
                             Rectangle()
                                 .fill(Color.green)
                                 .frame(width: 20, height: 4)
-                            Text("Capture D2")
+                            Text(d2Complete ? "D2 Complete" : "Capture D2")
                                 .font(.system(.caption, design: .rounded).weight(.semibold))
                                 .foregroundColor(.white.opacity(0.95))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                                .allowsTightening(true)
+                                .truncationMode(.tail)
+                            if d2Complete {
+                                Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            }
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.green.opacity(0.25)))
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(d2Complete ? Color.white.opacity(0.15) : Color.green.opacity(0.25))
+                        )
+                        .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    
-                    // Center reference legend as capture button
-                    Button {
+
+                    // Center reference legend as capture button (full row, centered)
+                    HStack {
+                        Spacer()
+                        Button {
                         showCenterCamera = true
-                    } label: {
+                        } label: {
                         HStack(spacing: 8) {
                             Circle()
                                 .fill(Color.orange)
                                 .frame(width: 12, height: 12)
-                            Text("Capture Center")
+                            Text(centerComplete ? "Center Captured" : "Capture Center")
                                 .font(.system(.caption, design: .rounded).weight(.semibold))
                                 .foregroundColor(.white.opacity(0.95))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                                .allowsTightening(true)
+                                .truncationMode(.tail)
+                            if centerComplete {
+                                Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            }
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.25)))
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(centerComplete ? Color.white.opacity(0.15) : Color.orange.opacity(0.25))
+                        )
+                        .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
                 }
                 
                 Text("Use the legend buttons to capture along each diagonal")
@@ -1060,6 +1104,13 @@ struct DiagonalVisualizerView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(20)
+        }
+        .onAppear { refreshCompletionStates() }
+        .onReceive(NotificationCenter.default.publisher(for: .diagonalPhotosSaved)) { _ in
+            refreshCompletionStates()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .centerReferenceSaved)) { _ in
+            centerComplete = true
         }
         .sheet(isPresented: $showCenterCamera) {
             if let project = project {
@@ -1077,6 +1128,14 @@ struct DiagonalVisualizerView: View {
             } else {
                 EmptyView()
             }
+        }
+    }
+    
+    private func refreshCompletionStates() {
+        if let project = project {
+            d1Complete = project.diagonal1Photos > 0
+            d2Complete = project.diagonal2Photos > 0
+            centerComplete = project.hasCenterReference
         }
     }
 }

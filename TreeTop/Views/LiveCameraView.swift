@@ -254,6 +254,8 @@ struct LiveCameraView: View {
                     print("📂 Image file: \(url.lastPathComponent)")
                 }
 
+            // Post notification that this diagonal has new photos
+            NotificationCenter.default.post(name: .diagonalPhotosSaved, object: nil, userInfo: ["diagonal": diagonalName])
             } catch {
             print("❌ Failed to save image: \(error)")
         }
