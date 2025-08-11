@@ -92,6 +92,36 @@ struct FolderContentsView: View {
                         metaRow(icon: "location", title: "Coordinates", value: "—")
                     }
                     metaRow(icon: "mountain.2.fill", title: "Elevation", value: String(format: "%.1f m", project.elevation))
+                    // Weather picker
+                    HStack(spacing: 10) {
+                        Image(systemName: weatherIcon(for: project.weatherCondition))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(weatherColor(for: project.weatherCondition))
+                            .frame(width: 18)
+                        Text("Weather")
+                            .font(.system(.subheadline, design: .rounded).weight(.medium))
+                            .glassTextSecondary()
+                        Spacer(minLength: 8)
+                        Menu {
+                            weatherOption("Clear", bind: project)
+                            weatherOption("Partly Cloudy", bind: project)
+                            weatherOption("Overcast", bind: project)
+                            weatherOption("Light Rain", bind: project)
+                            weatherOption("Rain", bind: project)
+                            weatherOption("Fog", bind: project)
+                            weatherOption("Snow", bind: project)
+                            Button("Reset") { project.weatherCondition = nil; try? modelContext.save() }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: weatherIcon(for: project.weatherCondition))
+                                    .foregroundColor(weatherColor(for: project.weatherCondition))
+                                Text(project.weatherCondition ?? "Set Weather")
+                            }
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundColor(.white)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                     metaRow(icon: "camera.viewfinder", title: "Diagonal 1 Photos", value: String(project.diagonal1Photos))
                     metaRow(icon: "camera.viewfinder", title: "Diagonal 2 Photos", value: String(project.diagonal2Photos))
                     if let last = project.lastAnalysisDate {
@@ -139,6 +169,41 @@ struct FolderContentsView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+    }
+
+    // MARK: - Weather helpers
+    @ViewBuilder
+    private func weatherOption(_ label: String, bind project: Project) -> some View {
+        Button(label) {
+            project.weatherCondition = label
+            try? modelContext.save()
+        }
+    }
+    
+    private func weatherIcon(for condition: String?) -> String {
+        switch condition {
+        case "Clear": return "sun.max.fill"
+        case "Partly Cloudy": return "cloud.sun.fill"
+        case "Overcast": return "cloud.fill"
+        case "Light Rain": return "cloud.drizzle.fill"
+        case "Rain": return "cloud.rain.fill"
+        case "Fog": return "cloud.fog.fill"
+        case "Snow": return "snowflake"
+        default: return "cloud.sun"
+        }
+    }
+    
+    private func weatherColor(for condition: String?) -> Color {
+        switch condition {
+        case "Clear": return .yellow
+        case "Partly Cloudy": return .orange
+        case "Overcast": return .gray
+        case "Light Rain": return Color.blue.opacity(0.8)
+        case "Rain": return .blue
+        case "Fog": return .white.opacity(0.85)
+        case "Snow": return .cyan
+        default: return .white.opacity(0.8)
+        }
     }
 
     // MARK: - Capture Compact Cards

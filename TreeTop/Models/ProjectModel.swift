@@ -45,6 +45,9 @@ class Project: Identifiable {
     var diagonal1Photos: Int = 0
     var diagonal2Photos: Int = 0
     
+    // Weather metadata
+    var weatherCondition: String?
+    
     // Analysis results storage - simplified for SwiftData compatibility
     var diagonal1Percentage: Double?
     var diagonal2Percentage: Double?

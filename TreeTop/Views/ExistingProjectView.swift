@@ -426,6 +426,14 @@ struct ProjectCard: View {
                             color: .blue
                         )
                         
+                        // Weather
+                        StatisticItem(
+                            icon: weatherIcon(for: project.weatherCondition),
+                            title: "Weather",
+                            value: project.weatherCondition ?? "—",
+                            color: weatherColor(for: project.weatherCondition)
+                        )
+                        
                         // Last Analysis
                         if let analysisDate = project.lastAnalysisDate {
                             StatisticItem(
@@ -554,20 +562,55 @@ struct StatisticItem: View {
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
                 .foregroundColor(color)
-            
+                .padding(.top, 2)
+
             Text(value)
                 .font(.system(.headline, design: .rounded, weight: .bold))
                 .glassText()
-            
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .allowsTightening(true)
+
             Text(title)
                 .font(.system(.caption2, design: .rounded))
                 .glassTextSecondary(opacity: 0.7)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Weather helpers for list card
+private func weatherIcon(for condition: String?) -> String {
+    switch condition {
+    case "Clear": return "sun.max.fill"
+    case "Partly Cloudy": return "cloud.sun.fill"
+    case "Overcast": return "cloud.fill"
+    case "Light Rain": return "cloud.drizzle.fill"
+    case "Rain": return "cloud.rain.fill"
+    case "Fog": return "cloud.fog.fill"
+    case "Snow": return "snowflake"
+    default: return "cloud.sun"
+    }
+}
+
+private func weatherColor(for condition: String?) -> Color {
+    switch condition {
+    case "Clear": return .yellow
+    case "Partly Cloudy": return .orange
+    case "Overcast": return .gray
+    case "Light Rain": return Color.blue.opacity(0.8)
+    case "Rain": return .blue
+    case "Fog": return .white.opacity(0.85)
+    case "Snow": return .cyan
+    default: return .white.opacity(0.8)
     }
 }
 
