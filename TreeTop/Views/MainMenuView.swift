@@ -93,7 +93,7 @@ struct MainMenuView: View {
                 case .howTo:
                     HowToUseAppView()
                 case .map:
-                    MapScreen()
+                    MapScreen(navigationPath: $path)
                 }
             }
         }

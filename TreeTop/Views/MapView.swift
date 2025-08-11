@@ -11,6 +11,7 @@ import SwiftData
 import CoreLocation
 
 struct MapScreen: View {
+    @Binding var navigationPath: [MainMenuDestination]
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var showProjectSheet = false
     @State private var selectedProjectFromMap: Project? = nil
@@ -190,6 +191,23 @@ struct MapScreen: View {
         }
         .navigationDestination(item: $navToProject) { project in
             FolderContentsView(folderURL: project.folderURL, project: project)
+                .navigationBarBackButtonHidden(true)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            navToProject = nil
+                            // Navigate back to existing projects instead of map
+                            navigationPath.removeAll()
+                            navigationPath.append(.existingProjects)
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("Projects")
+                            }
+                            .foregroundColor(.blue)
+                        }
+                    }
+                }
         }
 
 
