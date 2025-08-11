@@ -9,6 +9,7 @@ struct CenterReferenceCameraView: View {
     @State var showSaveConfirmation = false
     @Environment(\.dismiss) var dismiss
     @State var isPreviewingPhoto = false
+
     
     let project: Project
     

@@ -18,6 +18,7 @@ struct LiveCameraView: View {
     @Environment(\.dismiss) var dismiss
     @State var isPreviewingPhoto = false
     @State var showConfirmationDialog = false
+    @State var showBackWarning = false
     
     var saveToURL: URL
     var project: Project
@@ -221,6 +222,33 @@ struct LiveCameraView: View {
                 saveCapturedImages()
             }
             Button("Cancel", role: .cancel) {}
+        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    if !capturedImages.isEmpty {
+                        showBackWarning = true
+                    } else {
+                        dismiss()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundColor(.white)
+                }
+            }
+        }
+        .alert("Unsaved Progress", isPresented: $showBackWarning) {
+            Button("Continue Capturing", role: .cancel) { }
+            Button("Discard Photos", role: .destructive) {
+                capturedImages.removeAll()
+                dismiss()
+            }
+        } message: {
+            Text("You have \(capturedImages.count) unsaved photos. Are you sure you want to discard them?")
         }
     }
     
