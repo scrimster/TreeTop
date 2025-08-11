@@ -29,6 +29,7 @@ struct HowToUseAppView: View {
                     FrostedStepCard(stepNumber: 7, instruction: "After completing the second diagonal path, tap 'Run Canopy Analysis' to analyze your photos.")
                     FrostedStepCard(stepNumber: 8, instruction: "TreeTop converts each saved image to black & white, calculates the % black pixels (canopy cover) for each diagonal folder, and averages the results.")
                     FrostedStepCard(stepNumber: 9, instruction: "TreeTop stores metadata (GPS, date, time) and saves each image for analysis.")
+                    FrostedStepCard(stepNumber: 10, instruction: "You can access past projects in the 'Existing Projects' tab or in the 'Map Viewer' tab.")
 
                     Spacer()
                 }
