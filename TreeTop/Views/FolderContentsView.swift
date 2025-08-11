@@ -433,8 +433,10 @@ struct FolderContentsView: View {
                                     }
                                 }) {
                                     Label(isExportingPDF ? "Exporting…" : "Export PDF", systemImage: "doc.richtext")
+                                        .frame(maxWidth: .infinity)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.borderedProminent)
+                                .tint(.green)
                                 .padding(.horizontal)
 
                                 Spacer(minLength: 8)
