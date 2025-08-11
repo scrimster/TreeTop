@@ -30,6 +30,13 @@ struct FolderContentsView: View {
     @State private var summaryProgressMessage = ""
     @State private var showSummaryError = false
     @State private var summaryErrorMessage = ""
+
+    // PDF export state
+    @State private var isExportingPDF = false
+    @State private var exportedPDFURL: URL? = nil
+    @State private var showShareSheet = false
+    @State private var exportErrorMessage = ""
+    @State private var showExportError = false
     
     var isDiagonalFolder: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
@@ -238,6 +245,46 @@ struct FolderContentsView: View {
                             ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
                                 .padding(.horizontal)
                             
+                            // Export PDF report
+                            Button(action: {
+                                guard let project = project, !isExportingPDF else { return }
+                                isExportingPDF = true
+                                DispatchQueue.global(qos: .userInitiated).async {
+                                    do {
+                                        let url = try PDFExportManager.shared.exportProjectReport(for: project)
+                                        DispatchQueue.main.async {
+                                            self.exportedPDFURL = url
+                                            self.showShareSheet = true
+                                            self.isExportingPDF = false
+                                        }
+                                    } catch {
+                                        DispatchQueue.main.async {
+                                            self.exportErrorMessage = error.localizedDescription
+                                            self.showExportError = true
+                                            self.isExportingPDF = false
+                                        }
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    if isExportingPDF {
+                                        ProgressView().scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "doc.richtext")
+                                            .font(.system(size: 18, weight: .semibold))
+                                    }
+                                    Text(isExportingPDF ? "Exporting…" : "Export Project PDF")
+                                        .font(.headline)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(isExportingPDF ? Color.gray : Color.purple.opacity(0.85))
+                                .glassText()
+                                .cornerRadius(12)
+                                .padding(.horizontal)
+                            }
+                            .disabled(isExportingPDF)
+
                             // Center Reference Section - integrated into project details
                             if let project = project {
                                 CenterReferenceProjectSection(project: project)
@@ -386,10 +433,20 @@ struct FolderContentsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportedPDFURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
         .alert("Analysis Failed", isPresented: $showSummaryError) {
             Button("OK") { }
         } message: {
             Text(summaryErrorMessage)
+        }
+        .alert("Export Failed", isPresented: $showExportError) {
+            Button("OK") { }
+        } message: {
+            Text(exportErrorMessage)
         }
     }
     
