@@ -92,11 +92,8 @@ struct FolderContentsView: View {
                         metaRow(icon: "location", title: "Coordinates", value: "—")
                     }
                     metaRow(icon: "mountain.2.fill", title: "Elevation", value: String(format: "%.1f m", project.elevation))
-                    HStack(spacing: 12) {
-                        chip(text: "D1: \(project.diagonal1Photos)", color: .blue)
-                        chip(text: "D2: \(project.diagonal2Photos)", color: .green)
-                        Spacer()
-                    }
+                    metaRow(icon: "camera.viewfinder", title: "Diagonal 1 Photos", value: String(project.diagonal1Photos))
+                    metaRow(icon: "camera.viewfinder", title: "Diagonal 2 Photos", value: String(project.diagonal2Photos))
                     if let last = project.lastAnalysisDate {
                         metaRow(icon: "clock.fill", title: "Analyzed", value: last.formatted(.dateTime.month().day().year().hour().minute()))
                     }
@@ -294,6 +291,7 @@ struct FolderContentsView: View {
                                 ExpandableSummaryView(result: summaryResult, project: project, initiallyExpanded: false)
                                     .padding(.horizontal)
 
+
                                 // 3) Run Canopy Analysis
                                 Button(action: {
                                     guard let url = folderURL, !isGeneratingSummary else { return }
@@ -461,6 +459,7 @@ struct FolderContentsView: View {
                     if isImageFolder {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
+                                Spacer(minLength: 0)
                                 ForEach(imagesInViewContents.indices, id: \.self) { index in
                                     Image(uiImage: imagesInViewContents[index])
                                         .resizable()
@@ -473,7 +472,9 @@ struct FolderContentsView: View {
                                             showImagePreview = true
                                         }
                                 }
+                                Spacer(minLength: 0)
                             }
+                            .frame(maxWidth: .infinity)
                             .padding()
                         }
                     }
@@ -710,6 +711,7 @@ struct DiagonalContentsView: View {
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 16) {
+                            Spacer(minLength: 0)
                             ForEach(images, id: \.self) { url in
                                 VStack(spacing: 4) {
                                     if let img = UIImage(contentsOfFile: url.path) {
@@ -738,7 +740,9 @@ struct DiagonalContentsView: View {
                                     }
                                 }
                             }
+                            Spacer(minLength: 0)
                         }
+                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                     }
                 }

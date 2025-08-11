@@ -581,7 +581,7 @@ struct DiagonalProgress: View {
                 .font(.system(size: 12))
                 .glassTextSecondary(opacity: 0.7)
             
-            Text("D\(number): \(count)")
+            Text(number == 1 ? "Diagonal 1 Photos: \(count)" : "Diagonal 2 Photos: \(count)")
                 .font(.system(.caption2, design: .rounded, weight: .medium))
                 .glassTextSecondary(opacity: 0.7)
         }
