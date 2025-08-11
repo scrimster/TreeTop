@@ -395,26 +395,6 @@ struct FolderContentsView: View {
 
                                 // Advanced folders (optional)
                                 DisclosureGroup(isExpanded: $showAdvancedFolders) {
-                                    // Danger zone
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange)
-                                            Text("Advanced actions. Clearing a diagonal will permanently delete all photos and masks in that diagonal.")
-                                                .font(.system(.caption, design: .rounded))
-                                                .glassTextSecondary()
-                                        }
-                                        HStack(spacing: 12) {
-                                            Button(role: .destructive) {
-                                                diagonalToClear = "Diagonal 1"; showClearDiagonalAlert = true
-                                            } label: { Label("Clear Diagonal 1", systemImage: "trash") }
-
-                                            Button(role: .destructive) {
-                                                diagonalToClear = "Diagonal 2"; showClearDiagonalAlert = true
-                                            } label: { Label("Clear Diagonal 2", systemImage: "trash") }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-
                                     VStack(spacing: 12) {
                                         ForEach(files, id: \.self) { file in
                                             let fullPath = folderURL?.appendingPathComponent(file)
@@ -960,6 +940,8 @@ struct DiagonalVisualizerView: View {
     @State private var d1Complete: Bool = false
     @State private var d2Complete: Bool = false
     @State private var centerComplete: Bool = false
+    @State private var showD1Options: Bool = false
+    @State private var showD2Options: Bool = false
     
     var body: some View {
         LiquidGlassCard(cornerRadius: 16) {
@@ -1004,9 +986,13 @@ struct DiagonalVisualizerView: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 20) {
                         // Diagonal 1 capture button in legend
-                        Button {
-                        selectedDiagonal = "Diagonal 1"
-                        showCamera = true
+                    Button {
+                        if d1Complete {
+                            showD1Options = true
+                        } else {
+                            selectedDiagonal = "Diagonal 1"
+                            showCamera = true
+                        }
                         } label: {
                         HStack(spacing: 8) {
                             Rectangle()
@@ -1034,9 +1020,13 @@ struct DiagonalVisualizerView: View {
                         .buttonStyle(.plain)
                         
                         // Diagonal 2 capture button in legend
-                        Button {
-                        selectedDiagonal = "Diagonal 2"
-                        showCamera = true
+                    Button {
+                        if d2Complete {
+                            showD2Options = true
+                        } else {
+                            selectedDiagonal = "Diagonal 2"
+                            showCamera = true
+                        }
                         } label: {
                         HStack(spacing: 8) {
                             Rectangle()
@@ -1105,6 +1095,28 @@ struct DiagonalVisualizerView: View {
             }
             .padding(20)
         }
+        .confirmationDialog("Diagonal 1", isPresented: $showD1Options, titleVisibility: .visible) {
+            Button("Add Photos") {
+                selectedDiagonal = "Diagonal 1"; showCamera = true
+            }
+            Button("Wipe Photos & Masks", role: .destructive) {
+                if let base = folderURL { clearDiagonal(named: "Diagonal 1", at: base) }
+                refreshCompletionStates()
+                NotificationCenter.default.post(name: .diagonalPhotosSaved, object: nil, userInfo: ["diagonal": "Diagonal 1"]) 
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Diagonal 2", isPresented: $showD2Options, titleVisibility: .visible) {
+            Button("Add Photos") {
+                selectedDiagonal = "Diagonal 2"; showCamera = true
+            }
+            Button("Wipe Photos & Masks", role: .destructive) {
+                if let base = folderURL { clearDiagonal(named: "Diagonal 2", at: base) }
+                refreshCompletionStates()
+                NotificationCenter.default.post(name: .diagonalPhotosSaved, object: nil, userInfo: ["diagonal": "Diagonal 2"]) 
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .onAppear { refreshCompletionStates() }
         .onReceive(NotificationCenter.default.publisher(for: .diagonalPhotosSaved)) { _ in
             refreshCompletionStates()
@@ -1136,6 +1148,20 @@ struct DiagonalVisualizerView: View {
             d1Complete = project.diagonal1Photos > 0
             d2Complete = project.diagonal2Photos > 0
             centerComplete = project.hasCenterReference
+        }
+    }
+
+    private func clearDiagonal(named name: String, at base: URL) {
+        let fm = FileManager.default
+        let photos = base.appendingPathComponent(name).appendingPathComponent("Photos")
+        let masks  = base.appendingPathComponent(name).appendingPathComponent("Masks")
+        for dir in [photos, masks] {
+            if let items = try? fm.contentsOfDirectory(atPath: dir.path) {
+                for item in items {
+                    let url = dir.appendingPathComponent(item)
+                    try? fm.removeItem(at: url)
+                }
+            }
         }
     }
 }

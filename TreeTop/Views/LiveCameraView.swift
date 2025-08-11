@@ -259,6 +259,13 @@ struct LiveCameraView: View {
             } catch {
             print("❌ Failed to save image: \(error)")
         }
+
+        // Dismiss back to project page to avoid duplicate saves
+        DispatchQueue.main.async {
+            showConfirmationDialog = false
+            capturedImages.removeAll()
+            dismiss()
+        }
     }
     
     func injectGPSMetadataToEndpoints(location: CLLocation, savedImageURLs: [URL]) {
