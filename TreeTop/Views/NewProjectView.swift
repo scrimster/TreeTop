@@ -118,15 +118,12 @@ struct NewProjectView: View {
         // Dismiss keyboard first to prevent RTI issues
         isTextFieldFocused = false
         
-        // Small delay to ensure keyboard dismissal completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
-            if newProject != nil {
-                path = [.existingProjects]
-                projectName = ""
-            } else {
-                showDuplicateAlert = true
-            }
+        let newProject = ProjectManager.shared.createProject(name: projectName, date: Date())
+        if newProject != nil {
+            path = [.existingProjects]
+            projectName = ""
+        } else {
+            showDuplicateAlert = true
         }
     }
 }

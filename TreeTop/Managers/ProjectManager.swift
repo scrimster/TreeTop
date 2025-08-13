@@ -11,15 +11,14 @@ import UIKit
 import CoreLocation
 
 class ProjectManager {
-    static var shared: ProjectManager! //allows the instance to access the ProjectManage from anywhere
+    static var shared: ProjectManager! /// Shared instance for global access
     
     let modelContext: ModelContext
     private let initializationQueue = DispatchQueue(label: "com.treetop.projectmanager", qos: .userInitiated)
     
-    //initializes the manage with the given SwiftData model context
+    // Initializes the manager with the given SwiftData model context
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        print("✅ ProjectManager initialized successfully")
     }
     
     // Pre-warm any expensive operations
@@ -40,20 +39,18 @@ class ProjectManager {
             var fetchDescriptor = FetchDescriptor<Project>()
             fetchDescriptor.fetchLimit = 1
             let _ = try self.modelContext.fetch(fetchDescriptor)
-            print("✅ ProjectManager data preloaded")
         } catch {
-            print("⚠️ Failed to preload ProjectManager data: \(error)")
+            // Silently handle preload errors
         }
     }
     
     
     
-    //this creates a unique folder name using the project name the user inputs and creates a new UUID
+    /// Creates a new project with a unique folder structure
     func createProject(name: String, date: Date) -> Project? {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard !trimmedName.isEmpty else {
-            print("Project name is empty or only whitespace.")
             return nil
         }
         
@@ -68,13 +65,10 @@ class ProjectManager {
             }
             
             if nameExists {
-                print("Duplicate project name detected")
                 return nil
             }
         } catch {
-            print("Failed to check for duplicate projects: \(error)")
             return nil
-            
         }
         
         let folderName = "\(trimmedName) - \(UUID().uuidString)"
@@ -86,9 +80,9 @@ class ProjectManager {
             latitude: 0.0,
             longitude: 0.0,
             elevation: 0.0
-        ) //intializes the instance
+        )
         
-        let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName) //creates the URL for the project's folder
+        let folderURL = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask)[0].appendingPathComponent(folderName)
         
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
@@ -103,11 +97,9 @@ class ProjectManager {
                     try FileManager.default.createDirectory(at: masksURL, withIntermediateDirectories: true)
             }
             
-            modelContext.insert(newProject) //inserts the new project into the SwiftData model
-            print("New project created successfully")
+            modelContext.insert(newProject) // Inserts the new project into the SwiftData model
             return newProject
         } catch {
-            print("Failed to create folder: \(error)")
             return nil
         }
     }
@@ -122,11 +114,11 @@ class ProjectManager {
                 }
             }
         } catch {
-            print("Failed to delete folder: \(error.localizedDescription)")
+            // Silently handle folder deletion errors
         }
     }
     
-    //creating the function to save the captured photos to the subfolder content view
+    /// Saves captured images to the specified project subfolder
 
     func saveImage(_ image: UIImage, to project: Project, inSubFolder subfolder: String, type: String = "Photos") -> Bool {
         let folderURL: URL?
@@ -136,7 +128,6 @@ class ProjectManager {
         } else if type == "Masks" {
             folderURL = project.maskFolderURL(forDiagonal: subfolder)
         } else {
-            print("Invalid image type. Must be 'Photos' or 'Masks'.")
             return false
         }
 //        guard let folderURL = project.viewContentsURL(forSubfolder: subfolder) else {
@@ -145,7 +136,6 @@ class ProjectManager {
 //        }
         
         guard let folderURL = folderURL else {
-            print("Invalid subfolder path.")
             return false
         }
         
@@ -161,14 +151,12 @@ class ProjectManager {
         
         do {
             try imageData.write(to: fileURL)
-            print("Image saved to folder: \(fileURL.path)")
             
             // Refresh project statistics after saving image
             refreshProjectStatistics(project)
             
             return true
         } catch {
-            print("Error saving image: \(error)")
             return false
         }
     }

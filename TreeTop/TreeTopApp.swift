@@ -48,7 +48,6 @@ struct TreeTopApp: App {
             .onAppear {
                 // Start initialization immediately when the view appears
                 if modelContainer == nil && initializationError == nil {
-                    print("🚀 App appeared - triggering immediate initialization")
                     // Start on main thread to avoid any thread switching delays
                     initializeModelContainer()
                 }
@@ -57,17 +56,12 @@ struct TreeTopApp: App {
     }
     
     private func initializeModelContainer() {
-        print("⏱️ Starting ultra-fast ModelContainer initialization...")
-        
         // Use highest priority for maximum speed - no UI updates until complete
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                print("🔧 Creating ModelContainer...")
                 let schema = Schema([Project.self])
                 let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
                 let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-                
-                print("✅ ModelContainer created - completing on main thread")
                 
                 // Complete everything on main thread in one shot
                 DispatchQueue.main.async {
@@ -77,7 +71,6 @@ struct TreeTopApp: App {
                     
                     // Complete initialization immediately - no delays
                     self.modelContainer = container
-                    print("🎉 Ultra-fast initialization complete!")
                     
                     // Background preload - don't block anything
                     DispatchQueue.global(qos: .background).async {
@@ -86,7 +79,6 @@ struct TreeTopApp: App {
                 }
                 
             } catch {
-                print("❌ ModelContainer initialization failed: \(error)")
                 DispatchQueue.main.async {
                     self.initializationError = "Database initialization failed"
                 }
@@ -94,7 +86,5 @@ struct TreeTopApp: App {
         }
     }
     
-    private func sendLoadingMessage(_ message: String) {
-        NotificationCenter.default.post(name: .initializationMessage, object: message)
-    }
+
 }
