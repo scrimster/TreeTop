@@ -161,8 +161,8 @@ struct CenterReferenceCameraView: View {
                             }
                             
                             Button(action: {
-                                print("🔍 CenterReference: Capture button tapped")
-                                print("🔍 CenterReference: Session running? \(cameraManager.captureSession.isRunning)")
+                                // Capture button tapped
+                                // Session running status checked
                                 cameraManager.capturePhoto()
                             }) {
                                 Circle()
@@ -180,9 +180,9 @@ struct CenterReferenceCameraView: View {
             }
         }
         .onReceive(cameraManager.$capturedImage) { images in
-            print("🔍 CenterReference: Received captured images: \(images.count)")
+            // Received captured images
             if let latestImage = images.last {
-                print("🔍 CenterReference: Setting captured image and showing preview")
+                // Setting captured image and showing preview
                 capturedImage = latestImage
                 isPreviewingPhoto = true
                 cameraManager.capturedImage = []
@@ -198,7 +198,7 @@ struct CenterReferenceCameraView: View {
             )
         }
         .onAppear {
-            print("🔍 CenterReference: View appeared, initializing camera")
+            // View appeared, initializing camera
             cameraManager.initializeCamera()
             // Start location updates to ensure we have altitude when saving
             locationManager.startUpdating()
@@ -218,7 +218,7 @@ struct CenterReferenceCameraView: View {
                 NotificationCenter.default.post(name: .centerReferenceSaved, object: nil)
                 showSaveConfirmation = true
             } else {
-                print("Failed to save center reference photo")
+                // Failed to save center reference photo
             }
         } else {
             locationManager.requestLocationOnce { loc in
@@ -228,7 +228,7 @@ struct CenterReferenceCameraView: View {
                         NotificationCenter.default.post(name: .centerReferenceSaved, object: nil)
                         self.showSaveConfirmation = true
                     } else {
-                        print("Failed to save center reference photo")
+                        // Failed to save center reference photo
                     }
                 }
             }

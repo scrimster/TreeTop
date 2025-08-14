@@ -4,6 +4,10 @@
 //
 //  Created by Ashley Sanchez on 6/29/25.
 //
+//  REFACTORED - Components have been extracted into separate files:
+//  - ProjectSearchBar.swift
+//  - ProjectCard.swift
+//
 
 import SwiftUI
 import SwiftData
@@ -61,37 +65,7 @@ struct ExistingProjectView: View {
                 VStack(spacing: 0) {
                     // Search bar (always visible when projects exist, hidden in edit mode)
                     if !isEditMode {
-                        HStack {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.white.opacity(0.6))
-                                    .font(.system(size: 16))
-                                
-                                TextField("Search projects...", text: $searchText)
-                                    .font(.system(.body, design: .rounded))
-                                    .foregroundColor(.white)
-                                    .placeholder(when: searchText.isEmpty) {
-                                        Text("Search projects...")
-                                            .foregroundColor(.white.opacity(0.5))
-                                            .font(.system(.body, design: .rounded))
-                                    }
-                                
-                                if !searchText.isEmpty {
-                                    Button(action: {
-                                        searchText = ""
-                                    }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(.white.opacity(0.6))
-                                            .font(.system(size: 16))
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .liquidGlass(cornerRadius: 12)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 16)
+                        ProjectSearchBar(searchText: $searchText)
                     }
                     
                     // Content area
@@ -130,25 +104,16 @@ struct ExistingProjectView: View {
                         ScrollView {
                             LazyVStack(spacing: 12) {
                                 ForEach(filteredProjects, id: \.id) { project in
-                                    if isEditMode {
-                                        EditableProjectCard(
+                                    NavigationLink(destination: FolderContentsView(folderURL: project.folderURL, project: project)) {
+                                        ProjectCard(
                                             project: project,
-                                            onDelete: {
-                                                projectToDelete = project
-                                                showDeleteConfirmation = true
-                                            },
-                                            onRename: {
-                                                projectToRename = project
-                                                newProjectName = project.name
-                                                showRenameDialog = true
-                                            }
+                                            isEditMode: isEditMode,
+                                            onDelete: { projectToDelete = project; showDeleteConfirmation = true },
+                                            onRename: { projectToRename = project; newProjectName = project.name; showRenameDialog = true },
+                                            onTap: nil
                                         )
-                                    } else {
-                                        NavigationLink(destination: FolderContentsView(folderURL: project.folderURL, project: project)) {
-                                            ProjectCard(project: project)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
                                     }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
                             .padding()
@@ -218,9 +183,6 @@ struct ExistingProjectView: View {
             if let project = projectToDelete {
                 Text("Are you sure you want to delete '\(project.name)'? This action cannot be undone and will remove all associated data.")
             }
-            Button("Cancel", role: .cancel) {
-                projectToDelete = nil
-            }
         }
         .alert("Rename Project", isPresented: $showRenameDialog) {
             TextField("Project Name", text: $newProjectName)
@@ -243,10 +205,12 @@ struct ExistingProjectView: View {
             Text("A project with this name already exists. Please choose a different name.")
         }
     }
-
+    
+    // MARK: - Helper Functions
+    
     func loadProjects() async {
         let fetchDescriptor = FetchDescriptor<Project>()
-        do{
+        do {
             if let context = ProjectManager.shared?.modelContext {
                 let fetched = try context.fetch(fetchDescriptor)
                 // Sort projects alphabetically by name
@@ -259,7 +223,7 @@ struct ExistingProjectView: View {
                 refreshAllProjectStatistics()
             }
         } catch {
-            print("failed to fetch projects: \(error)")
+            // Failed to fetch projects
         }
     }
     
@@ -292,19 +256,19 @@ struct ExistingProjectView: View {
                 if let folderURL = project.folderURL {
                     if FileManager.default.fileExists(atPath: folderURL.path) {
                         try FileManager.default.removeItem(at: folderURL)
-                        print("✅ Successfully deleted project folder: \(folderURL.path)")
+                        // Successfully deleted project folder
                     }
                 }
             } catch {
-                print("❌ Failed to delete project folder: \(error.localizedDescription)")
+                // Failed to delete project folder
             }
             
             // Save the context to persist the deletion
             do {
                 try modelContext.save()
-                print("✅ Project deleted from database")
+                // Project deleted from database
             } catch {
-                print("❌ Failed to save context after deletion: \(error.localizedDescription)")
+                // Failed to save context after deletion
             }
         }
         
@@ -340,9 +304,9 @@ struct ExistingProjectView: View {
         
         do {
             try modelContext.save()
-            print("✅ Project renamed to: \(trimmedName)")
+            // Project renamed successfully
         } catch {
-            print("❌ Failed to save renamed project: \(error.localizedDescription)")
+            // Failed to save renamed project
         }
         
         // Refresh the project list
@@ -352,284 +316,7 @@ struct ExistingProjectView: View {
     }
 }
 
-struct ProjectCard: View {
-    let project: Project
-    
-    var body: some View {
-        LiquidGlassCard(cornerRadius: 18) {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header with project name, date, status, and center reference
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(project.name)
-                            .font(.system(.title2, design: .rounded, weight: .semibold))
-                            .glassText()
-                            .lineLimit(2)
-                        
-                        Text(project.date.formatted(date: .abbreviated, time: .shortened))
-                            .font(.system(.caption, design: .rounded))
-                            .glassTextSecondary(opacity: 0.7)
-                    }
-                    
-                    Spacer()
-                    
-                    // Center reference thumbnail
-                    if project.hasCenterReference {
-                        NavigationLink(destination: CenterReferenceDetailView(project: project)) {
-                            VStack(spacing: 4) {
-                                CenterReferenceThumbnail(project: project)
-                                
-                                Text("Center Ref")
-                                    .font(.system(.caption2, design: .rounded))
-                                    .glassTextSecondary(opacity: 0.6)
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    
-                    VStack(spacing: 4) {
-                        // Out of date indicator
-                        if project.isAnalysisOutOfDate && project.canopyCoverPercentage != nil {
-                            VStack(spacing: 2) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.orange)
-                                
-                                Text("Needs Rebake")
-                                    .font(.system(.caption2, design: .rounded, weight: .medium))
-                                    .glassTextSecondary(opacity: 0.8)
-                            }
-                        }
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .glassTextSecondary(opacity: 0.5)
-                    }
-                }
-                
-                // Statistics Section
-                if let canopyPercentage = project.canopyCoverPercentage {
-                    HStack(spacing: 20) {
-                        // Canopy Cover
-                        StatisticItem(
-                            icon: "leaf.fill",
-                            title: "Canopy Cover",
-                            value: "\(Int(canopyPercentage))%",
-                            color: .green
-                        )
-                        
-                        // Photo Count
-                        StatisticItem(
-                            icon: "camera.fill",
-                            title: "Photos",
-                            value: "\(project.totalPhotos)",
-                            color: .blue
-                        )
-                        
-                        // Weather
-                        StatisticItem(
-                            icon: weatherIcon(for: project.weatherCondition),
-                            title: "Weather",
-                            value: project.weatherCondition ?? "—",
-                            color: weatherColor(for: project.weatherCondition)
-                        )
-                        
-                        // Last Analysis
-                        if let analysisDate = project.lastAnalysisDate {
-                            StatisticItem(
-                                icon: "clock.fill",
-                                title: "Analyzed",
-                                value: formatRelativeDate(analysisDate),
-                                color: .purple
-                            )
-                        }
-                    }
-                } else {
-                    // No analysis yet
-                    HStack {
-                        Image(systemName: "chart.bar.fill")
-                            .font(.system(size: 14))
-                            .glassTextSecondary(opacity: 0.6)
-                        
-                        Text("No analysis available")
-                            .font(.system(.subheadline, design: .rounded))
-                            .glassTextSecondary(opacity: 0.6)
-                        
-                        Spacer()
-                        
-                        // Show photo counts even without analysis
-                        if project.totalPhotos > 0 {
-                            Text("\(project.totalPhotos) photos")
-                                .font(.system(.caption, design: .rounded))
-                                .glassTextSecondary(opacity: 0.7)
-                        }
-                    }
-                }
-                
-                // Progress indicators for diagonals
-                if project.diagonal1Photos > 0 || project.diagonal2Photos > 0 {
-                    HStack(spacing: 12) {
-                        DiagonalProgress(
-                            number: 1,
-                            count: project.diagonal1Photos
-                        )
-                        
-                        DiagonalProgress(
-                            number: 2,
-                            count: project.diagonal2Photos
-                        )
-                        
-                        Spacer()
-                    }
-                }
-            }
-            .padding(20)
-        }
-    }
-    
-    private func formatRelativeDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
-}
-
-struct EditableProjectCard: View {
-    let project: Project
-    let onDelete: () -> Void
-    let onRename: () -> Void
-    
-    var body: some View {
-        LiquidGlassCard(cornerRadius: 18) {
-            HStack(spacing: 16) {
-                // Project icon
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.4, green: 0.8, blue: 0.6),
-                                Color(red: 0.3, green: 0.7, blue: 0.4)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(project.name)
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineLimit(2)
-                    
-                    Text(project.date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Spacer()
-                
-                // Action buttons with liquid glass circles
-                HStack(spacing: 10) {
-                    Button(action: onRename) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
-                            .padding(10)
-                            .liquidGlassCircle(strokeOpacity: 0.4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
-                            .padding(10)
-                            .liquidGlassCircle(strokeOpacity: 0.4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .padding(16)
-        }
-    }
-}
-
-struct StatisticItem: View {
-    let icon: String
-    let title: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 18)
-                .foregroundColor(color)
-                .padding(.top, 2)
-
-            Text(value)
-                .font(.system(.headline, design: .rounded, weight: .bold))
-                .glassText()
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .allowsTightening(true)
-
-            Text(title)
-                .font(.system(.caption2, design: .rounded))
-                .glassTextSecondary(opacity: 0.7)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// MARK: - Weather helpers for list card
-private func weatherIcon(for condition: String?) -> String {
-    switch condition {
-    case "Clear": return "sun.max.fill"
-    case "Partly Cloudy": return "cloud.sun.fill"
-    case "Overcast": return "cloud.fill"
-    case "Light Rain": return "cloud.drizzle.fill"
-    case "Rain": return "cloud.rain.fill"
-    case "Fog": return "cloud.fog.fill"
-    case "Snow": return "snowflake"
-    default: return "cloud.sun"
-    }
-}
-
-private func weatherColor(for condition: String?) -> Color {
-    switch condition {
-    case "Clear": return .yellow
-    case "Partly Cloudy": return .orange
-    case "Overcast": return .gray
-    case "Light Rain": return Color.blue.opacity(0.8)
-    case "Rain": return .blue
-    case "Fog": return .white.opacity(0.85)
-    case "Snow": return .cyan
-    default: return .white.opacity(0.8)
-    }
-}
-
-struct DiagonalProgress: View {
-    let number: Int
-    let count: Int
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "camera.viewfinder")
-                .font(.system(size: 12))
-                .glassTextSecondary(opacity: 0.7)
-            
-            Text(number == 1 ? "Diagonal 1 Photos: \(count)" : "Diagonal 2 Photos: \(count)")
-                .font(.system(.caption2, design: .rounded, weight: .medium))
-                .glassTextSecondary(opacity: 0.7)
-        }
-    }
-}
+// MARK: - Extensions
 
 extension View {
     func placeholder<Content: View>(
@@ -644,59 +331,7 @@ extension View {
     }
 }
 
-struct CenterReferenceThumbnail: View {
-    let project: Project
-    @State private var thumbnailImage: UIImage?
-    
-    var body: some View {
-        Group {
-            if let image = thumbnailImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .liquidGlassCircle(strokeOpacity: 0.25, shadowRadius: 4)
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .frame(width: 40, height: 40)
-                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.25, shadowRadius: 4)
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.system(size: 16))
-                            .glassTextSecondary(opacity: 0.5)
-                    )
-            }
-        }
-        .onAppear {
-            loadThumbnail()
-        }
-        .onChange(of: project.centerImageFileName) { _, _ in
-            loadThumbnail()
-        }
-    }
-    
-    private func loadThumbnail() {
-        guard project.hasCenterReference else {
-            thumbnailImage = nil
-            return
-        }
-        
-        // Load on background queue to avoid blocking UI
-        Task {
-            let image = await withCheckedContinuation { continuation in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    let thumbnail = ProjectManager.shared?.getCenterReferenceThumbnail(for: project)
-                    continuation.resume(returning: thumbnail)
-                }
-            }
-            
-            await MainActor.run {
-                thumbnailImage = image
-            }
-        }
-    }
-}
+// MARK: - Preview
 
 #Preview {
     ExistingProjectView()

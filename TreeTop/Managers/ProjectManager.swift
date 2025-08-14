@@ -192,11 +192,11 @@ class ProjectManager {
     func saveCenterReferencePhoto(_ image: UIImage, to project: Project, location: CLLocation?) -> Bool {
         // Create center reference directory if it doesn't exist
         guard let projectFolderURL = project.folderURL else {
-            print("❌ Failed to get project folder URL")
+            // Failed to get project folder URL
             return false
         }
         
-        print("📁 Project folder URL: \(projectFolderURL.path)")
+                    // Project folder URL retrieved
         
         // Generate filename with timestamp
         let timestamp = Date()
@@ -209,19 +209,19 @@ class ProjectManager {
         let imageURL = projectFolderURL.appendingPathComponent(fileName)
         let thumbnailURL = projectFolderURL.appendingPathComponent(thumbnailFileName)
         
-        print("💾 Saving center reference to: \(imageURL.path)")
+                    // Saving center reference image
         
         // Save full-size image
         guard let imageData = image.jpegData(compressionQuality: 0.9) else {
-            print("❌ Failed to convert image to JPEG data")
+            // Failed to convert image to JPEG data
             return false
         }
         
         do {
             try imageData.write(to: imageURL)
-            print("✅ Saved center reference image: \(fileName)")
+            // Center reference image saved successfully
         } catch {
-            print("❌ Failed to save center reference image: \(error)")
+            // Failed to save center reference image
             return false
         }
         
@@ -231,9 +231,9 @@ class ProjectManager {
            let thumbnailData = thumbnail.jpegData(compressionQuality: 0.8) {
             do {
                 try thumbnailData.write(to: thumbnailURL)
-                print("✅ Saved center reference thumbnail: \(thumbnailFileName)")
+                // Center reference thumbnail saved successfully
             } catch {
-                print("⚠️ Failed to save thumbnail: \(error)")
+                // Failed to save thumbnail (non-critical)
             }
         }
         
@@ -247,16 +247,16 @@ class ProjectManager {
             project.centerImageElevation = location.altitude
             // Also reflect elevation in the main project elevation field for overview displays
             project.elevation = location.altitude
-            print("✅ Saved location data for center reference: lat=\(location.coordinate.latitude), lon=\(location.coordinate.longitude), alt=\(location.altitude)")
+            // Location data saved for center reference
         }
         
         // Save project changes
         do {
             try modelContext.save()
-            print("✅ Updated project with center reference data")
+            // Project updated with center reference data
             return true
         } catch {
-            print("❌ Failed to save project updates: \(error)")
+            // Failed to save project updates
             return false
         }
     }
@@ -303,11 +303,11 @@ class ProjectManager {
             project.centerImageElevation = nil
             
             try modelContext.save()
-            print("✅ Deleted center reference for project: \(project.name)")
+            // Center reference deleted for project
             return true
             
         } catch {
-            print("❌ Failed to delete center reference: \(error)")
+            // Failed to delete center reference
             return false
         }
     }

@@ -65,7 +65,7 @@ struct LoadingView: View {
             }
         }
         .onAppear {
-            print("🔄 LoadingView appeared")
+            // LoadingView appeared
             startLoadingAnimation()
         }
         .onDisappear {
