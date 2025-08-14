@@ -2,7 +2,6 @@
 //  AnalysisControlsView.swift
 //  TreeTop
 //
-//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
@@ -23,6 +22,10 @@ struct AnalysisControlsView: View {
     @State private var isExportingPDF = false
     @State private var summaryProgress: (current: Int, total: Int) = (0, 0)
     @State private var summaryProgressMessage = ""
+    @State private var exportedPDFURL: URL? = nil
+    @State private var showShareSheet = false
+    @State private var showExportError = false
+    @State private var exportErrorMessage = ""
     
     // MARK: - Body
     
@@ -104,25 +107,39 @@ struct AnalysisControlsView: View {
                     do {
                         let url = try PDFExportManager.shared.exportProjectReport(for: project)
                         DispatchQueue.main.async {
-                            // Handle successful export
+                            exportedPDFURL = url
+                            showShareSheet = true
                             isExportingPDF = false
                         }
                     } catch {
                         DispatchQueue.main.async {
-                            onAnalysisError(error.localizedDescription)
+                            exportErrorMessage = error.localizedDescription
+                            showExportError = true
                             isExportingPDF = false
                         }
                     }
                 }
             }) {
-                Label(isExportingPDF ? "Exporting…" : "Export PDF", systemImage: "doc.richtext")
+                Label(isExportingPDF ? "Generating…" : "Share Report", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(.green)
             .disabled(isExportingPDF)
         }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportedPDFURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .alert("Export Failed", isPresented: $showExportError) {
+            Button("OK") { }
+        } message: {
+            Text(exportErrorMessage)
+        }
     }
+    
+
     
     private func deleteAllMasks(projectURL: URL) {
         let fileManager = FileManager.default

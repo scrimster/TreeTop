@@ -2,7 +2,6 @@
 //  LiquidGlassComponents.swift
 //  TreeTop
 //
-//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI

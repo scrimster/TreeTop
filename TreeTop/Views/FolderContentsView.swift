@@ -464,22 +464,7 @@ struct FolderContentsView: View {
     }
 }
 
-struct ImageViewerView: View {
-    let imageURL: URL?
-    
-    var body: some View {
-        if let url = imageURL, let uiImage = UIImage(contentsOfFile: url.path) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-                .navigationTitle(url.lastPathComponent)
-                .padding()
-        } else {
-            Text("could not load image.")
-                .foregroundColor(.red)
-        }
-    }
-}
+
 
 struct DiagonalContentsView: View {
     let folderName: String
@@ -658,97 +643,7 @@ struct DiagonalContentsView: View {
     }
 }
 
-struct CenterReferenceView: View {
-    let folderName: String
-    let baseURL: URL
-    let project: Project?
-    
-    @State private var showCamera = false
-    
-    var body: some View {
-        LiquidGlassCard(cornerRadius: 12) {
-            VStack(alignment: .leading, spacing: 8) {
-                // Show center reference details if it exists
-                if let project = project, project.hasCenterReference {
-                    NavigationLink(destination: CenterReferenceDetailView(project: project)) {
-                        HStack {
-                            CenterReferenceThumbnail(project: project)
-                                .frame(width: 50, height: 50)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("View Center Reference")
-                                    .foregroundColor(.white.opacity(0.95))
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                
-                                if let date = project.centerImageDate {
-                                    Text("Captured \(date.formatted(date: .abbreviated, time: .shortened))")
-                                        .foregroundColor(.white.opacity(0.7))
-                                        .font(.system(size: 12, design: .rounded))
-                                }
-                                
-                                if project.centerImageLatitude != nil {
-                                    Text("📍 Location tagged")
-                                        .foregroundColor(.green.opacity(0.8))
-                                        .font(.system(size: 11, design: .rounded))
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.white.opacity(0.5))
-                                .font(.system(size: 10, weight: .semibold))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                
-                Button(action: {
-                    showCamera = true
-                }) {
-                    HStack {
-                        Image(systemName: project?.hasCenterReference == true ? "camera.badge.ellipsis" : "camera.macro.circle")
-                            .foregroundColor(.orange.opacity(0.85))
-                            .font(.system(size: 16))
-                        
-                        Text(project?.hasCenterReference == true ? "Replace Center Reference" : "Capture Center Reference")
-                            .foregroundColor(.white.opacity(0.95))
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                        
-                        Spacer()
-                        
-                        Image(systemName: project?.hasCenterReference == true ? "arrow.triangle.2.circlepath" : "plus.circle")
-                            .foregroundColor(.orange.opacity(0.5))
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(12)
-        }
-        .sheet(isPresented: $showCamera) {
-            if let project = project {
-                NavigationView {
-                    CenterReferenceCameraView(project: project)
-                        .navigationBarBackButtonHidden(true)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
-                                Button("Done") {
-                                    showCamera = false
-                                }
-                            }
-                        }
-                }
-            }
-        }
-    }
-}
+
 
 struct DiagonalVisualizerView: View {
     let project: Project?

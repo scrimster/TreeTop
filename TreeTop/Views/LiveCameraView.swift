@@ -314,26 +314,7 @@ struct LiveCameraView: View {
     }
 
     
-    struct CameraPreview: UIViewRepresentable {
-        let session: AVCaptureSession //creates a constant and defines the datatype
-        
-        //this function allows the UIKit to be displayed in SwiftUI, this is required acts like a bridge
-        func makeUIView(context: Context) -> UIView {
-            let view = UIView() //blank container to attach the camera preview to when ready
-            
-            //defining the camera preview we're going to see, the preview takes up the full screen, then attach the preview to the blank view container as a sublayer, then returns the filled in view container.
-            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-            previewLayer.videoGravity = .resizeAspectFill
-            previewLayer.frame = UIScreen.main.bounds
-            view.layer.addSublayer(previewLayer) //
-            
-            return view
-        }
-        
-        func updateUIView(_ uiView: UIView, context: Context) {
-            //nothing to update
-        }
-    }
+
 }
 
 #Preview {
