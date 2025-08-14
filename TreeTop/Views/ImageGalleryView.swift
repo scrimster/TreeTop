@@ -2,17 +2,21 @@
 //  ImageGalleryView.swift
 //  TreeTop
 //
-//  Created by TreeTop Assistant on 7/20/25.
+//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
 import Foundation
 
-/// Displays a gallery of images with delete functionality
+/// Image gallery with delete functionality
 struct ImageGalleryView: View {
+    // MARK: - Properties
+    
     let images: [UIImage]
     let onDelete: (Int) -> Void
     let onImageTap: (UIImage) -> Void
+    
+    // MARK: - Body
     
     var body: some View {
         if images.isEmpty {
@@ -47,10 +51,14 @@ struct ImageGalleryView: View {
 
 /// Individual image item in the gallery
 struct ImageGalleryItem: View {
+    // MARK: - Properties
+    
     let image: UIImage
     let onDelete: () -> Void
     let onTap: () -> Void
     @State private var showDeleteAlert = false
+    
+    // MARK: - Body
     
     var body: some View {
         VStack(spacing: 8) {

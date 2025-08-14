@@ -2,21 +2,24 @@
 //  ProjectCard.swift
 //  TreeTop
 //
-//  Created by TreeTop Assistant on 7/20/25.
+//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
 import SwiftData
 import Foundation
 
-/// Individual project card in the project list
+/// Project card component for displaying project information
 struct ProjectCard: View {
+    // MARK: - Properties
+    
     let project: Project
     let isEditMode: Bool
     let onDelete: () -> Void
     let onRename: () -> Void
     let onTap: (() -> Void)?
-
+    
+    // MARK: - Body
     
     var body: some View {
         LiquidGlassCard(cornerRadius: 18) {

@@ -2,17 +2,21 @@
 //  ProjectDataCard.swift
 //  TreeTop
 //
-//  Created by TreeTop Assistant on 7/20/25.
+//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
 import SwiftData
 import Foundation
 
-/// Displays project information in a card format
+/// Project data display card
 struct ProjectDataCard: View {
+    // MARK: - Properties
+    
     let project: Project
     @Environment(\.modelContext) private var modelContext
+    
+    // MARK: - Body
     
     var body: some View {
         let canopy = project.canopyCoverPercentage ?? 0

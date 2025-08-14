@@ -2,15 +2,17 @@
 //  AnalysisControlsView.swift
 //  TreeTop
 //
-//  Created by TreeTop Assistant on 7/20/25.
+//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
 import SwiftData
 import Foundation
 
-/// Controls for running canopy analysis and exporting results
+/// Analysis and export controls
 struct AnalysisControlsView: View {
+    // MARK: - Properties
+    
     let project: Project?
     let folderURL: URL?
     let onAnalysisComplete: (SummaryResult) -> Void
@@ -21,6 +23,8 @@ struct AnalysisControlsView: View {
     @State private var isExportingPDF = false
     @State private var summaryProgress: (current: Int, total: Int) = (0, 0)
     @State private var summaryProgressMessage = ""
+    
+    // MARK: - Body
     
     var body: some View {
         VStack(spacing: 16) {

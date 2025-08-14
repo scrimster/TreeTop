@@ -2,7 +2,7 @@
 //  DiagonalFolderView.swift
 //  TreeTop
 //
-//  Created by TreeTop Assistant on 7/20/25.
+//  Created by TreeTop Team on 7/20/25.
 //
 
 import SwiftUI
