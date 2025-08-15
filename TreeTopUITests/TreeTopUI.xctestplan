@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "9DDA87F4-A1FE-41AE-9BE4-8CF57D5F52E4",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:TreeTop.xcodeproj",
+        "identifier" : "99F4B3212E4EA1F1007416F7",
+        "name" : "TreeTopUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
