@@ -1,41 +1,44 @@
-////
-////  TreeTopUITests.swift
-////  TreeTopUITests
-////
-////  Created by Ashley Sanchez on 6/17/25.
-////
-//
-//import XCTest
-//
-//final class TreeTopUITests: XCTestCase {
-//
-//    override func setUpWithError() throws {
-//        // Put setup code here. This method is called before the invocation of each test method in the class.
-//
-//        // In UI tests it is usually best to stop immediately when a failure occurs.
-//        continueAfterFailure = false
-//
-//        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-//    }
-//
-//    override func tearDownWithError() throws {
-//        // Put teardown code here. This method is called after the invocation of each test method in the class.
-//    }
-//
-//    @MainActor
-//    func testExample() throws {
-//        // UI tests must launch the application that they test.
-//        let app = XCUIApplication()
-//        app.launch()
-//
-//        // Use XCTAssert and related functions to verify your tests produce the correct results.
-//    }
-//
-//    @MainActor
-//    func testLaunchPerformance() throws {
-//        // This measures how long it takes to launch your application.
-//        measure(metrics: [XCTApplicationLaunchMetric()]) {
-//            XCUIApplication().launch()
-//        }
-//    }
-//}
+import XCTest
+
+final class TreeTopUITests: XCTestCase {
+    var app: XCUIApplication!
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launch()
+    }
+
+    override func tearDownWithError() throws {
+        app = nil
+    }
+
+    func test_mainMenuButtonsExist() {
+        let home = HomePage(app: app)
+
+        XCTAssertTrue(home.newProject.exists, "New Project button should exist")
+        XCTAssertTrue(home.existingProjects.exists, "Existing Projects button should exist")
+        XCTAssertTrue(home.about.exists, "About TreeTop button should exist")
+        XCTAssertTrue(home.howTo.exists, "How to Use button should exist")
+        XCTAssertTrue(home.map.exists, "Map button should exist")
+    }
+
+    func test_isMainMenuLikelyVisible_returnsTrue() {
+        let home = HomePage(app: app)
+        XCTAssertTrue(home.isMainMenuLikelyVisible, "Main menu should be visible")
+    }
+
+    func test_tap_about_shows_about_screen() {
+        let home = HomePage(app: app)
+        if home.about.exists {
+            home.about.tap()
+
+            let aboutText = app.staticTexts
+                .containing(NSPredicate(format: "label CONTAINS[c] %@", "About"))
+                .firstMatch
+
+            XCTAssertTrue(aboutText.waitForExistence(timeout: 5),
+                          "About screen content should appear")
+        }
+    }
+}
