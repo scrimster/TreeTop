@@ -253,7 +253,7 @@ struct LiveCameraView: View {
     }
     
     private func saveCapturedImages() {
-        print("📸 Total captured images before saving", capturedImages.count)
+                    // Total captured images before saving
         do {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
@@ -266,26 +266,26 @@ struct LiveCameraView: View {
                 if let data = image.jpegData(compressionQuality: 1.0) {
                     try data.write(to: fileURL)
                     savedImageURLs.append(fileURL)
-                    print("📸 Saved: \(fileURL.lastPathComponent)")
+                    // Image saved successfully
 
                     if index == 0 {
-                        print("✅ This is the FIRST image: \(fileURL.lastPathComponent)")
+                        // First image saved
                     }
                     if index == capturedImages.count - 1 {
-                        print("✅ This is the LAST image: \(fileURL.lastPathComponent)")
+                        // Last image saved
                     }
                 }
             }
 
-                print("📁 Total savedImageURLs to be processed: \(savedImageURLs.count)")
+                // Total saved images to be processed
                 savedImageURLs.forEach { url in
-                    print("📂 Image file: \(url.lastPathComponent)")
+                    // Processing image file
                 }
 
             // Post notification that this diagonal has new photos
             NotificationCenter.default.post(name: .diagonalPhotosSaved, object: nil, userInfo: ["diagonal": diagonalName])
             } catch {
-            print("❌ Failed to save image: \(error)")
+            // Failed to save image
         }
 
         // Dismiss back to project page to avoid duplicate saves
@@ -310,30 +310,11 @@ struct LiveCameraView: View {
             CGImageDestinationFinalize(destination)
         }
 
-        print("✅ GPS metadata injected with fresh location request.")
+                    // GPS metadata injected with fresh location request
     }
 
     
-    struct CameraPreview: UIViewRepresentable {
-        let session: AVCaptureSession //creates a constant and defines the datatype
-        
-        //this function allows the UIKit to be displayed in SwiftUI, this is required acts like a bridge
-        func makeUIView(context: Context) -> UIView {
-            let view = UIView() //blank container to attach the camera preview to when ready
-            
-            //defining the camera preview we're going to see, the preview takes up the full screen, then attach the preview to the blank view container as a sublayer, then returns the filled in view container.
-            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-            previewLayer.videoGravity = .resizeAspectFill
-            previewLayer.frame = UIScreen.main.bounds
-            view.layer.addSublayer(previewLayer) //
-            
-            return view
-        }
-        
-        func updateUIView(_ uiView: UIView, context: Context) {
-            //nothing to update
-        }
-    }
+
 }
 
 #Preview {

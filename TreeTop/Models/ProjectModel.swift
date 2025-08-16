@@ -10,11 +10,11 @@ import SwiftData
 import CoreLocation
 
 @Model
-//creating the blueprint to what a single project is in the app
+/// Represents a forest canopy analysis project
 class Project: Identifiable {
     var id: UUID
-    var name: String //will store the name the user enters when creating a project
-    var date: Date //stores the full date and time the user selects when creating the project
+    var name: String /// User-defined project name
+    var date: Date /// Project creation date and time
     var folderName: String
     var latitude: Double = 0.0
     var longitude: Double = 0.0
@@ -117,7 +117,7 @@ class Project: Identifiable {
     }
 
     
-    //defining an initialization to create a new project
+    /// Creates a new project with the specified parameters
     init(
         name: String,
         date: Date,

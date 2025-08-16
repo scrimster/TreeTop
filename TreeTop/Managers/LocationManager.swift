@@ -23,11 +23,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        print("📍 LocationManager initialized - authorization will be requested on start")
     }
     
     func startUpdating() {
-        print("📍 Starting location updates...")
         manager.requestWhenInUseAuthorization()
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
             manager.startUpdatingLocation()
@@ -35,7 +33,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func stopUpdating() {
-        print("📍 Stopping location updates")
         manager.stopUpdatingLocation()
     }
     
@@ -107,7 +104,6 @@ private class LocationRequestDelegate: NSObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("❌ Failed to get location: \(error)")
         completion(nil)
     }
 }

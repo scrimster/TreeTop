@@ -2,7 +2,6 @@
 //  CameraOverlayView.swift
 //  TreeTop
 //
-//  Created by GitHub Copilot on 7/20/25.
 //
 
 import SwiftUI

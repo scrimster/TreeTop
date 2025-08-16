@@ -150,7 +150,7 @@ struct MapScreen: View {
                     )
                 )
             } else {
-                print("⚠️ User location not available")
+                // User location not available
             }
         }
         .onChange(of: projects) {
@@ -221,7 +221,7 @@ struct MapScreen: View {
             Button {
                 zoomTightTo(project)
                 infoProject = project
-                print("🔺 Open sheet for: \(project.name)")
+                // Open sheet for project
             } label: {
                 ZStack {
                     // bigger hit target (keeps pin easy to tap)
@@ -242,7 +242,7 @@ struct MapScreen: View {
     // Zoom in to center reference coordinate only
     func zoomTo(project: Project) {
         guard let coordinate = project.centerCoordinate else {
-            print("⚠️ Project '\(project.name)' has no saved coordinates.")
+            // Project has no saved coordinates
             return
         }
 
@@ -253,7 +253,7 @@ struct MapScreen: View {
             )
         )
 
-        print("🔍 Zoomed to project: \(project.name)")
+                    // Zoomed to project
     }
 
     // Pin scales with zoom
@@ -280,7 +280,7 @@ struct MapScreen: View {
                 )
             }
         } else {
-            print("⚠️ User location not available")
+            // User location not available
         }
     }
 

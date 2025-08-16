@@ -4,6 +4,12 @@
 //
 //  Created by Ashley Sanchez on 6/29/25.
 //
+//  REFACTORED - Large components have been extracted into separate files:
+//  - ProjectDataCard.swift
+//  - DiagonalFolderView.swift
+//  - ImageGalleryView.swift
+//  - AnalysisControlsView.swift
+//
 
 import SwiftUI
 import SwiftData
@@ -56,205 +62,13 @@ struct FolderContentsView: View {
         return lastComponent == "Diagonal 1" || lastComponent == "Diagonal 2"
     }
     
-    // MARK: - Project Data Card
-    @ViewBuilder
-    private func projectDataCard(_ project: Project) -> some View {
-        let canopy = project.canopyCoverPercentage ?? 0
-        let canopyColor: Color = canopyColorFor(canopy)
-        
-        return LiquidGlassCard(cornerRadius: 18) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(project.name)
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .glassText()
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
-                    Spacer()
-                    // Canopy badge
-                    HStack(spacing: 6) {
-                        Circle().fill(canopyColor).frame(width: 8, height: 8)
-                        Text(project.canopyCoverPercentage != nil ? String(format: "%.1f%%", canopy) : "—")
-                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                            .foregroundStyle(canopyColor)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
-                }
 
-                // Meta rows
-                VStack(spacing: 10) {
-                    metaRow(icon: "calendar", title: "Created", value: project.date.formatted(.dateTime.month().day().year()))
-                    if let c = project.centerCoordinate {
-                        metaRow(icon: "location.fill", title: "Coordinates", value: String(format: "%.5f, %.5f", c.latitude, c.longitude))
-                    } else {
-                        metaRow(icon: "location", title: "Coordinates", value: "—")
-                    }
-                    metaRow(icon: "mountain.2.fill", title: "Elevation", value: String(format: "%.1f m", project.elevation))
-                    // Weather picker
-                    HStack(spacing: 10) {
-                        Image(systemName: weatherIcon(for: project.weatherCondition))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(weatherColor(for: project.weatherCondition))
-                            .frame(width: 18)
-                        Text("Weather")
-                            .font(.system(.subheadline, design: .rounded).weight(.medium))
-                            .glassTextSecondary()
-                        Spacer(minLength: 8)
-                        Menu {
-                            weatherOption("Clear", bind: project)
-                            weatherOption("Partly Cloudy", bind: project)
-                            weatherOption("Overcast", bind: project)
-                            weatherOption("Light Rain", bind: project)
-                            weatherOption("Rain", bind: project)
-                            weatherOption("Fog", bind: project)
-                            weatherOption("Snow", bind: project)
-                            Button("Reset") { project.weatherCondition = nil; try? modelContext.save() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: weatherIcon(for: project.weatherCondition))
-                                    .foregroundColor(weatherColor(for: project.weatherCondition))
-                                Text(project.weatherCondition ?? "Set Weather")
-                            }
-                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                            .foregroundColor(.white)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    metaRow(icon: "camera.viewfinder", title: "Diagonal 1 Photos", value: String(project.diagonal1Photos))
-                    metaRow(icon: "camera.viewfinder", title: "Diagonal 2 Photos", value: String(project.diagonal2Photos))
-                    if let last = project.lastAnalysisDate {
-                        metaRow(icon: "clock.fill", title: "Analyzed", value: last.formatted(.dateTime.month().day().year().hour().minute()))
-                    }
-                }
-            }
-            .padding(16)
-        }
-    }
 
-    private func canopyColorFor(_ pct: Double) -> Color {
-        switch pct {
-        case ..<25: return Color(red: 0.85, green: 0.2, blue: 0.2)     // red
-        case 25..<50: return Color.orange                             // orange
-        case 50..<75: return Color.yellow                             // yellow
-        default: return Color.green                                   // green
-        }
-    }
 
-    @ViewBuilder
-    private func metaRow(icon: String, title: String, value: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.85))
-                .frame(width: 18)
-            Text(title)
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .glassTextSecondary()
-            Spacer(minLength: 8)
-            Text(value)
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .glassText()
-        }
-    }
 
-    @ViewBuilder
-    private func chip(text: String, color: Color) -> some View {
-        HStack(spacing: 6) {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(text)
-                .font(.system(.caption, design: .rounded).weight(.semibold))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
-    }
 
-    // MARK: - Weather helpers
-    @ViewBuilder
-    private func weatherOption(_ label: String, bind project: Project) -> some View {
-        Button(label) {
-            project.weatherCondition = label
-            try? modelContext.save()
-        }
-    }
-    
-    private func weatherIcon(for condition: String?) -> String {
-        switch condition {
-        case "Clear": return "sun.max.fill"
-        case "Partly Cloudy": return "cloud.sun.fill"
-        case "Overcast": return "cloud.fill"
-        case "Light Rain": return "cloud.drizzle.fill"
-        case "Rain": return "cloud.rain.fill"
-        case "Fog": return "cloud.fog.fill"
-        case "Snow": return "snowflake"
-        default: return "cloud.sun"
-        }
-    }
-    
-    private func weatherColor(for condition: String?) -> Color {
-        switch condition {
-        case "Clear": return .yellow
-        case "Partly Cloudy": return .orange
-        case "Overcast": return .gray
-        case "Light Rain": return Color.blue.opacity(0.8)
-        case "Rain": return .blue
-        case "Fog": return .white.opacity(0.85)
-        case "Snow": return .cyan
-        default: return .white.opacity(0.8)
-        }
-    }
 
-    // MARK: - Capture Compact Cards
-    @ViewBuilder
-    private func diagonalCard<PhotosLink: View>(title: String,
-                                                photosCount: Int,
-                                                masksCount: Int,
-                                                onCapture: @escaping () -> Void,
-                                                photosLink: PhotosLink,
-                                                masksLinkURL: URL) -> some View {
-        LiquidGlassCard(cornerRadius: 14) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(title)
-                        .font(.system(.headline, design: .rounded).weight(.semibold))
-                        .glassText()
-                    Spacer()
-                    Button(action: onCapture) { Label("Capture", systemImage: "camera") }
-                        .buttonStyle(.bordered)
-                }
-                HStack(spacing: 10) {
-                    chip(text: "Photos: \(photosCount)", color: .blue)
-                    chip(text: "Masks: \(masksCount)", color: .green)
-                    Spacer()
-                }
-                HStack(spacing: 10) {
-                    NavigationLink(destination: photosLink) {
-                        Label("Open Photos", systemImage: "photo.on.rectangle")
-                    }
-                    .buttonStyle(.bordered)
-                    NavigationLink(destination: FolderContentsView(folderURL: masksLinkURL, project: project)) {
-                        Label("Open Masks", systemImage: "rectangle.on.rectangle")
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding(14)
-        }
-    }
 
-    @ViewBuilder
-    private func dataRow(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased())
-                .font(.footnote.weight(.semibold))
-                .glassTextSecondary()
-            Text(value)
-                .font(.system(.body, design: .rounded, weight: .semibold))
-                .glassText()
-        }
-    }
 
     var isViewContents: Bool {
         guard let lastComponent = folderURL?.lastPathComponent else { return false }
@@ -312,7 +126,7 @@ struct FolderContentsView: View {
                 return projectPart.isEmpty ? "Project Contents" : projectPart
             }
         } catch {
-            print("Regex error: \(error)")
+            // Regex error occurred during processing
         }
         
         // Final fallback: if regex fails or no UUID found, return the whole name
@@ -348,7 +162,7 @@ struct FolderContentsView: View {
                             case .overview:
                                 // 1) Project details first
                                 if let project = project {
-                                    projectDataCard(project)
+                                    ProjectDataCard(project: project)
                                         .padding(.horizontal)
                                 }
 
@@ -357,86 +171,25 @@ struct FolderContentsView: View {
                                     .padding(.horizontal)
 
 
-                                // 3) Run Canopy Analysis
-                                Button(action: {
-                                    guard let url = folderURL, !isGeneratingSummary else { return }
-                                    if let project = project, project.needsPhotos { return }
-                                    deleteAllMasks(projectURL: url)
-                                    isGeneratingSummary = true
-                                    summaryProgress = (0, 0)
-                                    summaryProgressMessage = "Initializing…"
-                                    SummaryGenerator.createSummaryAsync(
-                                        forProjectAt: url,
-                                        progressCallback: { message, current, total in
-                                            DispatchQueue.main.async {
-                                                summaryProgress = (current, total)
-                                                summaryProgressMessage = message
-                                            }
-                                        },
-                                        completion: { result in
-                                            DispatchQueue.main.async {
-                                                isGeneratingSummary = false
-                                                switch result {
-                                                case .success(let summary):
-                                                    summaryResult = summary
-                                                    if let project = project {
-                                                        project.canopyCoverPercentage = summary.overallAverage
-                                                        project.lastAnalysisDate = Date()
-                                                        project.diagonal1Percentage = summary.diagonalAverages["Diagonal 1"]
-                                                        project.diagonal2Percentage = summary.diagonalAverages["Diagonal 2"]
-                                                        try? modelContext.save()
-                                                    }
-                                                case .failure(let error):
-                                                    summaryErrorMessage = error.localizedDescription
-                                                    showSummaryError = true
-                                                }
-                                            }
+                                // 3) Analysis Controls
+                                AnalysisControlsView(
+                                    project: project,
+                                    folderURL: folderURL,
+                                    onAnalysisComplete: { summary in
+                                        summaryResult = summary
+                                        if let project = project {
+                                            project.canopyCoverPercentage = summary.overallAverage
+                                            project.lastAnalysisDate = Date()
+                                            project.diagonal1Percentage = summary.diagonalAverages["Diagonal 1"]
+                                            project.diagonal2Percentage = summary.diagonalAverages["Diagonal 2"]
+                                            try? modelContext.save()
                                         }
-                                    )
-                                }) {
-                                    Label(isGeneratingSummary ? "Running Analysis…" : "Run Canopy Analysis", systemImage: "chart.bar.doc.horizontal")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(isGeneratingSummary || project?.needsPhotos == true)
-                                .padding(.horizontal)
-
-                                if isGeneratingSummary {
-                                    VStack(spacing: 8) {
-                                        ProgressView.safeBounded(value: Double(summaryProgress.current), total: Double(summaryProgress.total))
-                                            .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                                        Text(summaryProgressMessage).font(.caption).glassTextSecondary()
-                                        if summaryProgress.total > 0 {
-                                            Text("\(summaryProgress.current) / \(summaryProgress.total) images processed").font(.caption2).glassTextSecondary()
-                                        }
-                                        Button("Cancel Analysis") { isGeneratingSummary = false; SummaryGenerator.cancelSummaryGeneration() }
-                                            .font(.caption)
-                                            .foregroundColor(.red)
+                                    },
+                                    onAnalysisError: { error in
+                                        summaryErrorMessage = error
+                                        showSummaryError = true
                                     }
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(8)
-                                    .padding(.horizontal)
-                                }
-
-                                // 4) Export PDF (smaller)
-                                Button(action: {
-                                    guard let project = project, !isExportingPDF else { return }
-                                    isExportingPDF = true
-                                    DispatchQueue.global(qos: .userInitiated).async {
-                                        do {
-                                            let url = try PDFExportManager.shared.exportProjectReport(for: project)
-                                            DispatchQueue.main.async { self.exportedPDFURL = url; self.showShareSheet = true; self.isExportingPDF = false }
-                                        } catch {
-                                            DispatchQueue.main.async { self.exportErrorMessage = error.localizedDescription; self.showExportError = true; self.isExportingPDF = false }
-                                        }
-                                    }
-                                }) {
-                                    Label(isExportingPDF ? "Exporting…" : "Export PDF", systemImage: "doc.richtext")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.green)
+                                )
                                 .padding(.horizontal)
 
                                 Spacer(minLength: 8)
@@ -524,26 +277,22 @@ struct FolderContentsView: View {
                     }
                     
                     if isImageFolder {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                Spacer(minLength: 0)
-                                ForEach(imagesInViewContents.indices, id: \.self) { index in
-                                    Image(uiImage: imagesInViewContents[index])
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 200, height: 200)
-                                        .cornerRadius(12)
-                                        .shadow(radius: 4)
-                                        .onTapGesture {
-                                            selectedImage = imagesInViewContents[index]
-                                            showImagePreview = true
-                                        }
+                        ImageGalleryView(
+                            images: imagesInViewContents,
+                            onDelete: { index in
+                                // Handle image deletion
+                                if index < imagesInViewContents.count {
+                                    // Remove from array and file system
+                                    let imageToDelete = imagesInViewContents[index]
+                                    imagesInViewContents.remove(at: index)
+                                    // TODO: Delete from file system
                                 }
-                                Spacer(minLength: 0)
+                            },
+                            onImageTap: { image in
+                                selectedImage = image
+                                showImagePreview = true
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                        }
+                        )
                     }
                 }
             }
@@ -659,7 +408,7 @@ struct FolderContentsView: View {
             d2PhotosCount = (try? fm.contentsOfDirectory(atPath: d2PhotosURL.path).filter { $0.lowercased().hasSuffix(".jpg") }.count) ?? 0
             d2MasksCount  = (try? fm.contentsOfDirectory(atPath: d2MasksURL.path).filter { $0.lowercased().hasSuffix(".jpg") || $0.lowercased().hasSuffix(".png") || $0.lowercased().hasSuffix(".jpeg") }.count) ?? 0
         } catch {
-            print("failed to read folder: \(error)")
+            // Failed to read folder contents
         }
     }
     
@@ -674,7 +423,7 @@ struct FolderContentsView: View {
         let diagonal2MasksURL = projectURL.appendingPathComponent("Diagonal 2").appendingPathComponent("Masks")
         deleteMasksInDirectory(url: diagonal2MasksURL, fileManager: fileManager)
         
-        print("✅ All existing masks deleted for fresh analysis")
+                    // All existing masks deleted for fresh analysis
     }
     
     private func deleteMasksInDirectory(url: URL, fileManager: FileManager) {
@@ -691,11 +440,11 @@ struct FolderContentsView: View {
                    maskFile.lowercased().hasSuffix(".jpg") || 
                    maskFile.lowercased().hasSuffix(".jpeg") {
                     try fileManager.removeItem(at: maskFileURL)
-                    print("🗑️ Deleted mask: \(maskFile)")
+                                            // Deleted mask file
                 }
             }
         } catch {
-            print("⚠️ Error deleting masks in \(url.path): \(error)")
+                            // Error deleting masks in directory
         }
     }
 
@@ -715,22 +464,7 @@ struct FolderContentsView: View {
     }
 }
 
-struct ImageViewerView: View {
-    let imageURL: URL?
-    
-    var body: some View {
-        if let url = imageURL, let uiImage = UIImage(contentsOfFile: url.path) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-                .navigationTitle(url.lastPathComponent)
-                .padding()
-        } else {
-            Text("could not load image.")
-                .foregroundColor(.red)
-        }
-    }
-}
+
 
 struct DiagonalContentsView: View {
     let folderName: String
@@ -897,7 +631,7 @@ struct DiagonalContentsView: View {
             try FileManager.default.removeItem(at: url)
             loadImages()
         } catch {
-            print("Error deleting image: \(error)")
+            // Error deleting image
         }
     }
 
@@ -909,97 +643,7 @@ struct DiagonalContentsView: View {
     }
 }
 
-struct CenterReferenceView: View {
-    let folderName: String
-    let baseURL: URL
-    let project: Project?
-    
-    @State private var showCamera = false
-    
-    var body: some View {
-        LiquidGlassCard(cornerRadius: 12) {
-            VStack(alignment: .leading, spacing: 8) {
-                // Show center reference details if it exists
-                if let project = project, project.hasCenterReference {
-                    NavigationLink(destination: CenterReferenceDetailView(project: project)) {
-                        HStack {
-                            CenterReferenceThumbnail(project: project)
-                                .frame(width: 50, height: 50)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("View Center Reference")
-                                    .foregroundColor(.white.opacity(0.95))
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                
-                                if let date = project.centerImageDate {
-                                    Text("Captured \(date.formatted(date: .abbreviated, time: .shortened))")
-                                        .foregroundColor(.white.opacity(0.7))
-                                        .font(.system(size: 12, design: .rounded))
-                                }
-                                
-                                if project.centerImageLatitude != nil {
-                                    Text("📍 Location tagged")
-                                        .foregroundColor(.green.opacity(0.8))
-                                        .font(.system(size: 11, design: .rounded))
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.white.opacity(0.5))
-                                .font(.system(size: 10, weight: .semibold))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                
-                Button(action: {
-                    showCamera = true
-                }) {
-                    HStack {
-                        Image(systemName: project?.hasCenterReference == true ? "camera.badge.ellipsis" : "camera.macro.circle")
-                            .foregroundColor(.orange.opacity(0.85))
-                            .font(.system(size: 16))
-                        
-                        Text(project?.hasCenterReference == true ? "Replace Center Reference" : "Capture Center Reference")
-                            .foregroundColor(.white.opacity(0.95))
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                        
-                        Spacer()
-                        
-                        Image(systemName: project?.hasCenterReference == true ? "arrow.triangle.2.circlepath" : "plus.circle")
-                            .foregroundColor(.orange.opacity(0.5))
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: 8, strokeOpacity: 0.15)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(12)
-        }
-        .sheet(isPresented: $showCamera) {
-            if let project = project {
-                NavigationView {
-                    CenterReferenceCameraView(project: project)
-                        .navigationBarBackButtonHidden(true)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
-                                Button("Done") {
-                                    showCamera = false
-                                }
-                            }
-                        }
-                }
-            }
-        }
-    }
-}
+
 
 struct DiagonalVisualizerView: View {
     let project: Project?
