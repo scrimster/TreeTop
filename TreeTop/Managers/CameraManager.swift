@@ -255,7 +255,7 @@ class CameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate{
         }
     }
     
-    //this function is going to actually capture the photo now that the session is configured. We need to set-up the photo settings before capturing the still photo
+            // Capture photo with configured session and photo settings
     func capturePhoto() {
         guard captureSession.isRunning else {
             print("Capture session not running")
