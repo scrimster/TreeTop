@@ -207,7 +207,8 @@ struct LiveCameraView: View {
             cameraManager.stopSession()
         }
         .onChange(of: cameraManager.capturedImage) {
-            capturedImages.append(contentsOf: cameraManager.capturedImage)
+            let optimized = cameraManager.capturedImage.compactMap { $0.downscaled(maxDimension: 1800) ?? $0 }
+            capturedImages.append(contentsOf: optimized)
             isPreviewingPhoto = true
             cameraManager.capturedImage = []
         }
@@ -263,7 +264,9 @@ struct LiveCameraView: View {
                 let filename = "image_\(dateFormatter.string(from: Date()))_\(String(format: "%02d", index)).jpg"
                 let fileURL = saveToURL.appendingPathComponent(filename)
 
-                if let data = image.jpegData(compressionQuality: 1.0) {
+                let optimizedImage = image.downscaled(maxDimension: 1800) ?? image
+
+                if let data = optimizedImage.jpegData(compressionQuality: 0.7) {
                     try data.write(to: fileURL)
                     savedImageURLs.append(fileURL)
                     // Image saved successfully

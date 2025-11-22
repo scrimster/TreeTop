@@ -3,6 +3,20 @@ import CoreVideo
 import Accelerate
 
 extension UIImage {
+    /// Downscale image while preserving aspect ratio to avoid memory bloat
+    /// - Parameter maxDimension: Maximum width or height allowed
+    /// - Returns: A resized image that fits within the max dimension
+    func downscaled(maxDimension: CGFloat = 1800) -> UIImage? {
+        guard size.width > 0 && size.height > 0 else { return nil }
+
+        let largestSide = max(size.width, size.height)
+        guard largestSide > maxDimension else { return self }
+
+        let scale = maxDimension / largestSide
+        let targetSize = CGSize(width: size.width * scale, height: size.height * scale)
+        return resized(to: targetSize)
+    }
+
     // Optimized resizing with better memory management
     func resized(to size: CGSize) -> UIImage? {
         // Safety check for zero or negative dimensions
