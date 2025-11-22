@@ -14,8 +14,8 @@ struct MainMenuView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                // Animated forest background
-                AnimatedForestBackground()
+                // Adaptive background respects performance settings to reduce lag on older devices
+                AdaptiveForestBackground()
                     .allowsHitTesting(false) // Prevent background from intercepting touches
                 
                 VStack(spacing: 32) {

@@ -145,7 +145,9 @@ class ProjectManager {
         let fileName = "image_\(dateFormatter.string(from: Date())).jpg"
         let fileURL = folderURL.appendingPathComponent(fileName)
         
-        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+        let optimizedImage = image.downscaled(maxDimension: 1800) ?? image
+
+        guard let imageData = optimizedImage.jpegData(compressionQuality: 0.7) else {
             return false
         }
         
@@ -211,8 +213,10 @@ class ProjectManager {
         
                     // Saving center reference image
         
-        // Save full-size image
-        guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+        // Save optimized full-size image
+        let optimizedImage = image.downscaled(maxDimension: 2000) ?? image
+
+        guard let imageData = optimizedImage.jpegData(compressionQuality: 0.75) else {
             // Failed to convert image to JPEG data
             return false
         }
